@@ -1,15 +1,20 @@
+// Emil Vinod Descriptors
 const words = [
   'quite a great lover',
   'athleisurewear user',
+  'names head knobhead',
+  'next pope contender',
   'retired pastry chef',
+  'former living child',    
   'woodsman on mondays',
   'sending out an SOS.',
   'super hans advocate',
   'MONORAIL! MONORAIL!',
-  'former living child',
-  'next pope contender',
   'composing cacophony',
-  'karaoke connoisseur'
+  'karaoke connoisseur',
+  'amateur tooth fairy',
+  'cant ballroom dance',
+  'delusion associates'
 ];
 
 window.bgHeroWords = words;
