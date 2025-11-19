@@ -14,7 +14,7 @@ const words = [
   'karaoke connoisseur',
   'amateur tooth fairy',
   'cant ballroom dance',
-  'delusion associates'
+  'associates delusion'
 ];
 
 window.bgHeroWords = words;
