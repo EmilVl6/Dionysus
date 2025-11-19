@@ -1,8 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="background:#ff6b35">
 
 <head>
   <meta charset="utf-8" />
+  <style>
+    :root { --bg: #ff6b35; }
+    html,body { background: var(--bg) !important; }
+    button, input, select, textarea { background: transparent !important; }
+    img { background: transparent !important; }
+    #preloader { position:fixed; inset:0; background:#ff6b35; z-index:999999; opacity:0; visibility:hidden; transition:opacity .35s ease; }
+    #preloader.show { opacity:1; visibility:visible; }
+    #preloader.hide { opacity:0; visibility:hidden; pointer-events:none; }
+  </style>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="description" content="Emil Vinod — Developer ≷ Drummer" />
   <title>Emil Vinod</title>
@@ -10,13 +19,44 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
   <script src="bg-hero-words.js"></script>
 </head>
 
-<body>
+<body style="background:#ff6b35">
+  <div id="preloader" class="show" aria-hidden="true"></div>
   <div id="page-wrap">
+    <div class="top-right-ui">
+      <button id="metronome-btn" title="Metronome" aria-label="Metronome">
+        <span class="metronome-icon">
+            <svg id="metronome-svg" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="20" r="18" stroke="#111" stroke-width="3" fill="none"/>
+              <g id="metronome-arm">
+                <line x1="20" y1="20" x2="20" y2="5" stroke="#000" stroke-width="4" stroke-linecap="round" />
+                <circle cx="20" cy="20" r="2.5" fill="#000" />
+              </g>
+            </svg>
+          </span>
+      </button>
+      <div id="metronome-popup" style="display:none;position:absolute;top:56px;right:16px;background:transparent;border-radius:12px;padding:12px 14px;box-shadow:0 2px 16px #0002;z-index:1000;min-width:220px;">
+        <div class="bpm-control">
+          <button id="bpm-minus" class="bpm-btn" aria-label="Decrease BPM">−</button>
+          <div class="bpm-display">
+            <div class="bpm-prev" id="bpm-prev">174</div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+              <div class="bpm-current" id="bpm-value">60</div>
+              <div class="bpm-label">BPM</div>
+            </div>
+            <div class="bpm-next" id="bpm-next">61</div>
+          </div>
+          <button id="bpm-plus" class="bpm-btn" aria-label="Increase BPM">+</button>
+        </div>
+      </div>
+      <button id="warp-btn" title="Mute" aria-label="Mute" aria-pressed="false">
+        <span class="warp-icon" aria-hidden="true"></span>
+      </button>
+    </div>
     <button id="color-btn" title="Switchup bg Colour" aria-label="Switchup bg Colour">
       <img src="favicon.png" alt="icon" class="color-btn-icon" />
     </button>
@@ -32,21 +72,148 @@
   </div>
   <script>
     (function(){
-      const colors = [
-        '#ff6b35', '#ffffff', '#bf7d5a', '#d55151', '#4e9294', '#c47085', '#ccb096', '#ca6d5c', '#aaa565'
-      ];
+      const pre = document.getElementById('preloader');
+      if(pre){
+        pre.classList.add('show');
+        setTimeout(()=>{
+          pre.classList.add('hide');
+          setTimeout(()=>{ try{ pre.parentNode && pre.parentNode.removeChild(pre); }catch(e){} }, 420);
+        }, 0);
+      }
+    })();
+    (function(){
+      const metronomeBtn = document.getElementById('metronome-btn');
+      const metronomeArm = document.getElementById('metronome-arm');
+      const metronomePopup = document.getElementById('metronome-popup');
+      const bpmMinus = document.getElementById('bpm-minus');
+      const bpmPlus = document.getElementById('bpm-plus');
+      const bpmValue = document.getElementById('bpm-value');
+      const bpmPrev = document.getElementById('bpm-prev');
+      const bpmNext = document.getElementById('bpm-next');
+      let bpm = 60;
+      let swingAngle = 30;
+      let bpmTarget = bpm;
+      let bpmStart = bpm;
+      let bpmTransitionStart = 0;
+      const bpmTransitionDurationDefault = 400;
+      let bpmTransitionDurationActive = bpmTransitionDurationDefault;
+      let phase = 0;
+      let lastTime = Date.now();
+
+      function getEffectiveBpm(now) {
+        if (bpmTarget === bpmStart) return bpmTarget;
+        const dur = Math.max(1, bpmTransitionDurationActive || bpmTransitionDurationDefault);
+        const t = Math.min(1, (now - bpmTransitionStart) / dur);
+        const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        return bpmStart + (bpmTarget - bpmStart) * eased;
+      }
+
+      function animateArm() {
+        const now = Date.now();
+        const dt = Math.max(0, now - lastTime) / 1000;
+        lastTime = now;
+        const effectiveBpm = getEffectiveBpm(now);
+        const angularVelocity = 2 * Math.PI * (effectiveBpm / 60);
+        phase += angularVelocity * dt;
+        const angle = Math.sin(phase) * swingAngle;
+        if (metronomeArm) metronomeArm.setAttribute('transform', `rotate(${angle},20,20)`);
+        if (now - bpmTransitionStart >= (bpmTransitionDurationActive || bpmTransitionDurationDefault)) {
+          bpmStart = bpmTarget;
+        }
+        
+        requestAnimationFrame(animateArm);
+      }
+
+      lastTime = Date.now();
+      animateArm();
+
+      metronomeBtn.addEventListener('click', (e) => { e.stopPropagation(); metronomePopup.style.display = 'block'; try { if(typeof warpMuted === 'undefined' || !warpMuted){ const ctx = new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = 'sine'; o.frequency.value = 660; g.gain.value = 0.14; o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.18); o.onended = ()=>ctx.close(); } } catch(e) {} });
+      document.addEventListener('click', (e) => { if (!metronomePopup.contains(e.target) && e.target !== metronomeBtn) { metronomePopup.style.display = 'none'; } });
+
+      function updateBpmDisplay() {
+        bpm = Math.max(30, Math.min(240, Math.round(bpm)));
+        bpmValue.textContent = bpm;
+        bpmPrev.textContent = Math.max(30, bpm - 1);
+        bpmNext.textContent = Math.min(240, bpm + 1);
+      }
+
+      function changeBpm(delta) {
+        const newBpm = Math.max(30, Math.min(240, bpm + delta));
+        const now = Date.now();
+        const currentEffective = getEffectiveBpm(now);
+        bpmStart = currentEffective;
+        bpmTarget = newBpm;
+        bpmTransitionStart = now;
+        const jump = Math.abs(bpmTarget - bpmStart);
+        bpmTransitionDurationActive = jump > 20 ? 100 : bpmTransitionDurationDefault;
+        bpm = newBpm;
+        updateBpmDisplay();
+      }
+
+      let holdTimer = null;
+        let repeatTimer = null;
+        let holdDelayTimer = null;
+        const holdDelay = 300;
+        function startHold(delta) {
+          holdDelayTimer = setTimeout(() => {
+            let stepSize = 1;
+            const maxStep = 64;
+            const interval = 220;
+            repeatTimer = setInterval(() => {
+              changeBpm(delta * stepSize);
+              stepSize = Math.min(maxStep, stepSize * 2);
+            }, interval);
+            holdDelayTimer = null;
+          }, holdDelay);
+        }
+        function stopHold() { 
+          if (holdDelayTimer) { 
+            clearTimeout(holdDelayTimer); 
+            holdDelayTimer = null; 
+          } 
+          if (repeatTimer) { 
+            clearInterval(repeatTimer); 
+            repeatTimer = null; 
+          } 
+        }
+
+        bpmPlus.addEventListener('mousedown', (e) => { e.preventDefault(); startHold(1); });
+        bpmMinus.addEventListener('mousedown', (e) => { e.preventDefault(); startHold(-1); });
+        bpmPlus.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(1); }, {passive:false});
+        bpmMinus.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(-1); }, {passive:false});
+        document.addEventListener('mouseup', stopHold);
+        bpmPlus.addEventListener('mouseleave', stopHold);
+        bpmMinus.addEventListener('mouseleave', stopHold);
+        document.addEventListener('touchend', stopHold);
+        bpmPlus.addEventListener('click', (e) => { changeBpm(1); });
+        bpmMinus.addEventListener('click', (e) => { changeBpm(-1); });
+
+      updateBpmDisplay();
+
+      const warpBtn = document.getElementById('warp-btn');
+      let warpMuted = true;
+      function renderWarpIcon(){
+        const iconContainer = warpBtn.querySelector('.warp-icon');
+        if(!iconContainer) return;
+        iconContainer.classList.toggle('wave-active', !warpMuted);
+        iconContainer.innerHTML = '<span class="warp-dots" aria-hidden="true"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>';
+        warpBtn.setAttribute('aria-pressed', String(!warpMuted));
+        warpBtn.title = warpMuted ? 'Unmute' : 'Mute';
+        warpBtn.setAttribute('aria-label', warpMuted ? 'Unmute' : 'Mute');
+      }
+      renderWarpIcon();
+      warpBtn.addEventListener('click', function(){
+        warpMuted = !warpMuted;
+        renderWarpIcon();
+      });
+    })();
+    (function(){
+      const colors = ['#ff6b35','#ffffff','#bf7d5a','#d55151','#4e9294','#c47085','#ccb096','#ca6d5c','#aaa565'];
       let idx = 0;
       const btn = document.getElementById('color-btn');
       const root = document.documentElement;
-      function setBg(i){
-        idx = i;
-        root.style.setProperty('--bg', colors[idx]);
-        btn.style.background = colors[(idx+1)%colors.length];
-        btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-      }
-      btn.addEventListener('click', function(){
-        setBg((idx+1)%colors.length);
-      });
+      function setBg(i){ idx = i; root.style.setProperty('--bg', colors[idx]); btn.style.setProperty('background', colors[(idx+1)%colors.length], 'important'); btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'; }
+      btn.addEventListener('click', function(){ setBg((idx+1)%colors.length); });
       setBg(0);
     })();
     (function(){
@@ -55,52 +222,25 @@
       const inner = el.querySelector('.center-inner');
       if(!inner) return;
       el.style.overflow = 'hidden';
-      function fit(){
-        inner.style.transform = '';
-        const needed = inner.scrollHeight;
-        const avail = window.innerHeight;
-        const scale = Math.min(1, avail / needed);
-        inner.style.transform = `scale(${scale})`;
-      }
+      function fit(){ inner.style.transform = ''; const needed = inner.scrollHeight; const avail = window.innerHeight; const scale = Math.min(1, avail / needed); inner.style.transform = `scale(${scale})`; }
       window.addEventListener('resize', fit);
       window.addEventListener('load', () => setTimeout(fit, 50));
       setTimeout(fit, 50);
-      if (document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function') {
-        document.fonts.ready.then(fit);
-      }
-
+      if (document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function') { document.fonts.ready.then(fit); }
       (function(){
         const el = document.getElementById('bg-hero-word');
         if(!el) return;
         const container = el.parentElement;
         const words = window.bgHeroWords || [];
-
         const phrases = words.map(s => String(s).trim());
-
         let phraseQueue = [];
-        function shuffleQueue(){
-          phraseQueue = phrases.slice();
-          for(let i=phraseQueue.length-1;i>0;i--){
-            const j = Math.floor(Math.random()*(i+1));
-            [phraseQueue[i],phraseQueue[j]] = [phraseQueue[j],phraseQueue[i]];
-          }
-        }
+        function shuffleQueue(){ phraseQueue = phrases.slice(); for(let i=phraseQueue.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [phraseQueue[i],phraseQueue[j]] = [phraseQueue[j],phraseQueue[i]]; } }
         shuffleQueue();
         let queueIndex = 0;
-
-        function pickNextPhrase(){
-          if(phraseQueue.length === 0) shuffleQueue();
-          if(queueIndex >= phraseQueue.length){
-            shuffleQueue();
-            queueIndex = 0;
-          }
-          return phraseQueue[queueIndex++];
-        }
-
+        function pickNextPhrase(){ if(phraseQueue.length === 0) shuffleQueue(); if(queueIndex >= phraseQueue.length){ shuffleQueue(); queueIndex = 0; } return phraseQueue[queueIndex++]; }
         const displayDelay = 4500;
         const fadeDuration = 450;
         const eraseDelay = 350;
-
         function computeBaseScale(){
           const measure = document.createElement('span');
           measure.className = 'bg-hero-word';
@@ -111,21 +251,14 @@
           measure.style.whiteSpace = 'nowrap';
           document.body.appendChild(measure);
           let maxW = 0, maxH = 0;
-          for(const p of phrases){
-            measure.textContent = p;
-            const r = measure.getBoundingClientRect();
-            if(r.width > maxW) maxW = r.width;
-            if(r.height > maxH) maxH = r.height;
-          }
+          for(const p of phrases){ measure.textContent = p; const r = measure.getBoundingClientRect(); if(r.width > maxW) maxW = r.width; if(r.height > maxH) maxH = r.height; }
           document.body.removeChild(measure);
-
           const availW = Math.max(window.innerWidth * 0.92, 200);
           const availH = Math.max(window.innerHeight * 0.6, 120);
           let scaleW = availW / Math.max(maxW, 1);
           let scaleH = availH / Math.max(maxH, 1);
           let base = Math.min(scaleW, scaleH);
           base = Math.max(0.4, Math.min(1.4, base));
-
           container.style.display = 'block';
           container.style.width = Math.round(maxW) + 'px';
           container.style.textAlign = 'left';
@@ -134,48 +267,14 @@
           container.dataset.baseScale = base;
           container.style.transform = `scale(${base})`;
         }
-
         let typingTimers = [];
         function clearTimers(){ for(const t of typingTimers) clearTimeout(t); typingTimers = []; }
-
-        function typeWord(word){
-          clearTimers();
-          el.textContent = '';
-          const base = parseFloat(container.dataset.baseScale || '1');
-          container.style.transition = `opacity ${fadeDuration}ms ease, transform ${fadeDuration}ms cubic-bezier(.2,.9,.3,1)`;
-          container.style.opacity = '1';
-          container.style.transform = `scale(${base})`;
-
-          const typeSpeed = 60;
-          const preCharDelay = 100;
-          for(let i=0;i<word.length;i++){
-            typingTimers.push(setTimeout(()=>{
-              el.textContent = word.slice(0, i) + '_';
-            }, i * typeSpeed));
-
-            typingTimers.push(setTimeout(()=>{
-              el.textContent = word.slice(0, i + 1);
-            }, i * typeSpeed + preCharDelay));
-          }
-
-          const total = word.length * typeSpeed + displayDelay;
-          typingTimers.push(setTimeout(()=>{
-            container.style.opacity = '0';
-            typingTimers.push(setTimeout(()=>{
-              computeBaseScale();
-              typingTimers.push(setTimeout(()=>{ typeWord(pickNextPhrase()); }, eraseDelay));
-            }, fadeDuration));
-          }, total));
-        }
-
+        function typeWord(word){ clearTimers(); el.textContent = ''; const base = parseFloat(container.dataset.baseScale || '1'); container.style.transition = `opacity ${fadeDuration}ms ease, transform ${fadeDuration}ms cubic-bezier(.2,.9,.3,1)`; container.style.opacity = '1'; container.style.transform = `scale(${base})`; const typeSpeed = 60; const preCharDelay = 100; for(let i=0;i<word.length;i++){ typingTimers.push(setTimeout(()=>{ el.textContent = word.slice(0, i) + '_'; }, i * typeSpeed)); typingTimers.push(setTimeout(()=>{ el.textContent = word.slice(0, i + 1); }, i * typeSpeed + preCharDelay)); } const total = word.length * typeSpeed + displayDelay; typingTimers.push(setTimeout(()=>{ container.style.opacity = '0'; typingTimers.push(setTimeout(()=>{ computeBaseScale(); typingTimers.push(setTimeout(()=>{ typeWord(pickNextPhrase()); }, eraseDelay)); }, fadeDuration)); }, total)); }
         window.addEventListener('resize', computeBaseScale);
         window.addEventListener('load', computeBaseScale);
-        if(document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function'){
-          document.fonts.ready.then(computeBaseScale);
-        }
-
-      computeBaseScale();
-      setTimeout(()=>{ typeWord(pickNextPhrase()); }, 300);
+        if(document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function'){ document.fonts.ready.then(computeBaseScale); }
+        computeBaseScale();
+        setTimeout(()=>{ typeWord(pickNextPhrase()); }, 300);
       })();
     })();
   </script>
@@ -187,52 +286,18 @@
       cursor.style.top = '-9999px';
       cursor.style.opacity = '0';
       document.body.appendChild(cursor);
-
       let mouseX = window.innerWidth/2, mouseY = window.innerHeight/2;
       let raf = null;
       let _seenFirstMove = false;
-
-      function render(){
-        cursor.style.left = mouseX + 'px';
-        cursor.style.top = mouseY + 'px';
-        raf = null;
-      }
-
-      window.addEventListener('mousemove', (e)=>{
-        mouseX = e.clientX; mouseY = e.clientY;
-        if(!_seenFirstMove){
-          _seenFirstMove = true;
-          cursor.style.opacity = '1';
-        }
-        
-        if(!raf) raf = requestAnimationFrame(render);
-      }, {passive:true});
-
-        document.addEventListener('mouseleave', ()=>{
-          cursor.style.opacity = '0';
-        });
-        document.addEventListener('mouseenter', ()=>{
-          if(_seenFirstMove) cursor.style.opacity = '1';
-        });
-
+      function render(){ cursor.style.left = mouseX + 'px'; cursor.style.top = mouseY + 'px'; raf = null; }
+      window.addEventListener('mousemove', (e)=>{ mouseX = e.clientX; mouseY = e.clientY; if(!_seenFirstMove){ _seenFirstMove = true; cursor.style.opacity = '1'; } if(!raf) raf = requestAnimationFrame(render); }, {passive:true});
+      document.addEventListener('mouseleave', ()=>{ cursor.style.opacity = '0'; });
+      document.addEventListener('mouseenter', ()=>{ if(_seenFirstMove) cursor.style.opacity = '1'; });
       window.addEventListener('mousedown', ()=>{ cursor.classList.add('active'); });
       window.addEventListener('mouseup', ()=>{ cursor.classList.remove('active'); });
-
-      function bindHoverBig(selector){
-        document.querySelectorAll(selector).forEach(el=>{
-          el.addEventListener('mouseenter', ()=> cursor.classList.add('big'));
-          el.addEventListener('mouseleave', ()=> cursor.classList.remove('big'));
-        });
-      }
-      bindHoverBig('a');
-      bindHoverBig('button');
-      bindHoverBig('.btn');
-      bindHoverBig('.folder-btn');
-
-      if(('ontouchstart' in window) || navigator.maxTouchPoints > 0){
-        cursor.style.display = 'none';
-        document.body.style.cursor = 'auto';
-      }
+      function bindHoverBig(selector){ document.querySelectorAll(selector).forEach(el=>{ el.addEventListener('mouseenter', ()=> cursor.classList.add('big')); el.addEventListener('mouseleave', ()=> cursor.classList.remove('big')); }); }
+      bindHoverBig('a'); bindHoverBig('button'); bindHoverBig('.btn'); bindHoverBig('.folder-btn');
+      if(('ontouchstart' in window) || navigator.maxTouchPoints > 0){ cursor.style.display = 'none'; document.body.style.cursor = 'auto'; }
     })();
   </script>
 </body>
