@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="bg-hero-words.js"></script>
 </head>
 
 <body>
@@ -47,19 +48,7 @@
         const el = document.getElementById('bg-hero-word');
         if(!el) return;
         const container = el.parentElement;
-        const words = [
-          'quite a great lover',
-          'athleisurewear user',
-          'retired pastry chef',
-          'woodsman on mondays',
-          'sending out an SOS.',
-          'super hans advocate',
-          'MONORAIL! MONORAIL!',
-          'former living child',
-          'next pope contender',
-          'composing cacophony',
-          'karaoke connoisseur'
-        ];
+        const words = window.bgHeroWords || [];
 
         const phrases = words.map(s => String(s).trim());
 
