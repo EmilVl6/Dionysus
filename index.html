@@ -1,11 +1,204 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Developer ≷ Drummer">
-    <title>Emil Vinod</title>
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="Emil Vinod — Developer ≷ Drummer" />
+  <title>Emil Vinod</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
+
+<body>
+  <div id="page-wrap">
+    <main class="center">
+    <div class="bg-hero" aria-hidden="true"><span id="bg-hero-word" class="bg-hero-word"></span></div>
+      <div class="center-inner">
+      <h1 class="name">Emil Vinod</h1>
+      <p class="subtitle">Developer ≷ Drummer</p>      
+      </div>
+    </main>
+  </div>
+  <script>
+    (function(){
+      const el = document.querySelector('.center');
+      if(!el) return;
+      const inner = el.querySelector('.center-inner');
+      if(!inner) return;
+      el.style.overflow = 'hidden';
+      function fit(){
+        inner.style.transform = '';
+        const needed = inner.scrollHeight;
+        const avail = window.innerHeight;
+        const scale = Math.min(1, avail / needed);
+        inner.style.transform = `scale(${scale})`;
+      }
+      window.addEventListener('resize', fit);
+      window.addEventListener('load', () => setTimeout(fit, 50));
+      setTimeout(fit, 50);
+      if (document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function') {
+        document.fonts.ready.then(fit);
+      }
+
+      (function(){
+        const el = document.getElementById('bg-hero-word');
+        if(!el) return;
+        const container = el.parentElement;
+        const words = [
+          'quite a great lover',
+          'athleisurewear user',
+          'retired pastry chef',
+          'woodsman on mondays',
+          'sending out an SOS.',
+          'super hans advocate',
+          'MONORAIL! MONORAIL!',
+          'former living child',
+          'next pope contender',
+          'composing new noise',
+          'karaoke connoisseur'
+        ];
+        const phrases = words.map(s => String(s).trim());
+
+  let index = Math.floor(Math.random() * phrases.length);
+  function pickNextIndex(){
+    if(phrases.length <= 1) return index;
+    let n = index;
+    while(n === index){ n = Math.floor(Math.random() * phrases.length); }
+    return n;
+  }
+  const displayDelay = 4500;
+  const fadeDuration = 450;
+  const eraseDelay = 350;
+
+        function computeBaseScale(){
+          const measure = document.createElement('span');
+          measure.className = 'bg-hero-word';
+          measure.style.position = 'absolute';
+          measure.style.left = '-9999px';
+          measure.style.top = '0';
+          measure.style.visibility = 'hidden';
+          measure.style.whiteSpace = 'nowrap';
+          document.body.appendChild(measure);
+          let maxW = 0, maxH = 0;
+          for(const p of phrases){
+            measure.textContent = p;
+            const r = measure.getBoundingClientRect();
+            if(r.width > maxW) maxW = r.width;
+            if(r.height > maxH) maxH = r.height;
+          }
+          document.body.removeChild(measure);
+
+          const availW = Math.max(window.innerWidth * 0.92, 200);
+          const availH = Math.max(window.innerHeight * 0.6, 120);
+          let scaleW = availW / Math.max(maxW, 1);
+          let scaleH = availH / Math.max(maxH, 1);
+          let base = Math.min(scaleW, scaleH);
+          base = Math.max(0.4, Math.min(1.4, base));
+
+          container.style.display = 'block';
+          container.style.width = Math.round(maxW) + 'px';
+          container.style.textAlign = 'left';
+          container.style.transformOrigin = 'left center';
+          container.style.left = '6vw';
+          container.dataset.baseScale = base;
+          container.style.transform = `scale(${base})`;
+        }
+
+        let typingTimers = [];
+        function clearTimers(){ for(const t of typingTimers) clearTimeout(t); typingTimers = []; }
+
+        function typeWord(word){
+          clearTimers();
+          el.textContent = '';
+          const base = parseFloat(container.dataset.baseScale || '1');
+          container.style.transition = `opacity ${fadeDuration}ms ease, transform ${fadeDuration}ms cubic-bezier(.2,.9,.3,1)`;
+          container.style.opacity = '1';
+          container.style.transform = `scale(${base})`;
+
+          const typeSpeed = 60;
+          const preCharDelay = 100;
+          for(let i=0;i<word.length;i++){
+            typingTimers.push(setTimeout(()=>{
+              el.textContent = word.slice(0, i) + '_';
+            }, i * typeSpeed));
+
+            typingTimers.push(setTimeout(()=>{
+              el.textContent = word.slice(0, i + 1);
+            }, i * typeSpeed + preCharDelay));
+          }
+
+          const total = word.length * typeSpeed + displayDelay;
+          typingTimers.push(setTimeout(()=>{
+            container.style.opacity = '0';
+            typingTimers.push(setTimeout(()=>{
+              index = pickNextIndex();
+              computeBaseScale();
+              typingTimers.push(setTimeout(()=>{ typeWord(phrases[index]); }, eraseDelay));
+            }, fadeDuration));
+          }, total));
+        }
+
+        window.addEventListener('resize', computeBaseScale);
+        window.addEventListener('load', computeBaseScale);
+        if(document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function'){
+          document.fonts.ready.then(computeBaseScale);
+        }
+
+  computeBaseScale();
+  setTimeout(()=>{ typeWord(phrases[index]); }, 300);
+      })();
+    })();
+  </script>
+  <script>
+    (function(){
+      const cursor = document.createElement('div');
+      cursor.className = 'cursor-circle';
+      cursor.style.left = '-9999px';
+      cursor.style.top = '-9999px';
+      cursor.style.opacity = '0';
+      document.body.appendChild(cursor);
+
+      let mouseX = window.innerWidth/2, mouseY = window.innerHeight/2;
+      let raf = null;
+      let _seenFirstMove = false;
+
+      function render(){
+        cursor.style.left = mouseX + 'px';
+        cursor.style.top = mouseY + 'px';
+        raf = null;
+      }
+
+      window.addEventListener('mousemove', (e)=>{
+        mouseX = e.clientX; mouseY = e.clientY;
+        if(!_seenFirstMove){
+          _seenFirstMove = true;
+          cursor.style.opacity = '1';
+        }
+        if(!raf) raf = requestAnimationFrame(render);
+      }, {passive:true});
+
+      window.addEventListener('mousedown', ()=>{ cursor.classList.add('active'); });
+      window.addEventListener('mouseup', ()=>{ cursor.classList.remove('active'); });
+
+      function bindHoverBig(selector){
+        document.querySelectorAll(selector).forEach(el=>{
+          el.addEventListener('mouseenter', ()=> cursor.classList.add('big'));
+          el.addEventListener('mouseleave', ()=> cursor.classList.remove('big'));
+        });
+      }
+      bindHoverBig('a');
+      bindHoverBig('button');
+      bindHoverBig('.btn');
+      bindHoverBig('.folder-btn');
+
+      if(('ontouchstart' in window) || navigator.maxTouchPoints > 0){
+        cursor.style.display = 'none';
+        document.body.style.cursor = 'auto';
+      }
+    })();
+  </script>
+</body>
 </html>
