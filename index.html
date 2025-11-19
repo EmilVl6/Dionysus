@@ -10,20 +10,45 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
   <script src="bg-hero-words.js"></script>
 </head>
 
 <body>
   <div id="page-wrap">
+    <button id="color-btn" title="Change background" aria-label="Change background">
+      <img src="favicon.png" alt="icon" class="color-btn-icon" />
+    </button>
     <main class="center">
     <div class="bg-hero" aria-hidden="true"><span id="bg-hero-word" class="bg-hero-word"></span></div>
       <div class="center-inner">
+      <div class="pencil-intro">Hi I'm</div>
       <h1 class="name">Emil Vinod</h1>
+      <div class="pencil-after">one('s)</div>
       <p class="subtitle">Developer ≷ Drummer</p>      
       </div>
     </main>
   </div>
   <script>
+    (function(){
+      const colors = [
+        '#ff6b35', '#ffffff', '#bf7d5a', '#d55151', '#4e9294', '#c47085', '#ccb096', '#ca6d5c', '#aaa565'
+      ];
+      let idx = 0;
+      const btn = document.getElementById('color-btn');
+      const root = document.documentElement;
+      function setBg(i){
+        idx = i;
+        root.style.setProperty('--bg', colors[idx]);
+        btn.style.background = colors[(idx+1)%colors.length];
+        btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+      }
+      btn.addEventListener('click', function(){
+        setBg((idx+1)%colors.length);
+      });
+      setBg(0);
+    })();
     (function(){
       const el = document.querySelector('.center');
       if(!el) return;
@@ -179,6 +204,7 @@
           _seenFirstMove = true;
           cursor.style.opacity = '1';
         }
+        
         if(!raf) raf = requestAnimationFrame(render);
       }, {passive:true});
 
