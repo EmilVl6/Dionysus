@@ -60,18 +60,32 @@
           'composing cacophony',
           'karaoke connoisseur'
         ];
+
         const phrases = words.map(s => String(s).trim());
 
-  let index = Math.floor(Math.random() * phrases.length);
-  function pickNextIndex(){
-    if(phrases.length <= 1) return index;
-    let n = index;
-    while(n === index){ n = Math.floor(Math.random() * phrases.length); }
-    return n;
-  }
-  const displayDelay = 4500;
-  const fadeDuration = 450;
-  const eraseDelay = 350;
+        let phraseQueue = [];
+        function shuffleQueue(){
+          phraseQueue = phrases.slice();
+          for(let i=phraseQueue.length-1;i>0;i--){
+            const j = Math.floor(Math.random()*(i+1));
+            [phraseQueue[i],phraseQueue[j]] = [phraseQueue[j],phraseQueue[i]];
+          }
+        }
+        shuffleQueue();
+        let queueIndex = 0;
+
+        function pickNextPhrase(){
+          if(phraseQueue.length === 0) shuffleQueue();
+          if(queueIndex >= phraseQueue.length){
+            shuffleQueue();
+            queueIndex = 0;
+          }
+          return phraseQueue[queueIndex++];
+        }
+
+        const displayDelay = 4500;
+        const fadeDuration = 450;
+        const eraseDelay = 350;
 
         function computeBaseScale(){
           const measure = document.createElement('span');
@@ -134,9 +148,8 @@
           typingTimers.push(setTimeout(()=>{
             container.style.opacity = '0';
             typingTimers.push(setTimeout(()=>{
-              index = pickNextIndex();
               computeBaseScale();
-              typingTimers.push(setTimeout(()=>{ typeWord(phrases[index]); }, eraseDelay));
+              typingTimers.push(setTimeout(()=>{ typeWord(pickNextPhrase()); }, eraseDelay));
             }, fadeDuration));
           }, total));
         }
@@ -147,8 +160,8 @@
           document.fonts.ready.then(computeBaseScale);
         }
 
-  computeBaseScale();
-  setTimeout(()=>{ typeWord(phrases[index]); }, 300);
+      computeBaseScale();
+      setTimeout(()=>{ typeWord(pickNextPhrase()); }, 300);
       })();
     })();
   </script>
@@ -179,6 +192,13 @@
         }
         if(!raf) raf = requestAnimationFrame(render);
       }, {passive:true});
+
+        document.addEventListener('mouseleave', ()=>{
+          cursor.style.opacity = '0';
+        });
+        document.addEventListener('mouseenter', ()=>{
+          if(_seenFirstMove) cursor.style.opacity = '1';
+        });
 
       window.addEventListener('mousedown', ()=>{ cursor.classList.add('active'); });
       window.addEventListener('mouseup', ()=>{ cursor.classList.remove('active'); });
