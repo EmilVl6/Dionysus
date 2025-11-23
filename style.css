@@ -186,10 +186,10 @@ select { padding: 0.45rem 0.6rem; border-radius: 8px; border: 1px solid var(--mu
 
 
 .center { position: relative; height: 100vh; display: flex; align-items: center; justify-content: center; box-sizing: border-box; overflow: hidden; }
-.center-inner { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 2rem; transform-origin: top center; transition: transform .12s ease; background: transparent; z-index: 2; }
+.center-inner { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 2rem; transform-origin: center center; transition: transform .12s ease; background: transparent; z-index: 2; }
 
-.portrait { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%); width: clamp(460px, 70vw, 1300px); max-width: 98%; max-height: 92vh; pointer-events: none; z-index: 1; display: block; }
-.portrait img { width: 100%; height: auto; display: block; object-fit: cover; border: 0; box-shadow: none; background: transparent; }
+.portrait { position: fixed; left: 50%; bottom: 0; top: auto; transform: translateX(-50%); pointer-events: none; z-index: 0; display: block; }
+.portrait img { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); height: clamp(780px, 82vh, 1700px); width: auto; max-width: none; max-height: 108vh; display: block; object-fit: cover; object-position: center bottom; border: 0; box-shadow: none; background: transparent; z-index: 0; visibility: visible; opacity: 1; }
 
 
 
@@ -399,14 +399,14 @@ a:hover ~ .cursor-circle, button:hover ~ .cursor-circle, .btn:hover ~ .cursor-ci
 }
 
 .scene {
-  position: absolute;
-  left: 50%;
-  top: 105%;
-  transform: translate(-50%, -50%);
-  transform-style: preserve-3d;
-  z-index: 3;
-  --radius: 570px;
-  --panel-count: 24;
+        position: absolute;
+        left: 50%;
+        top: 105%;
+        transform: translate(-50%, -50%);
+    transform-style: preserve-3d;
+    z-index: 3;
+    --radius: 570px;
+    --panel-count: 24;
 }
 
 .banner {

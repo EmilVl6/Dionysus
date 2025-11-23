@@ -86,9 +86,14 @@
       el.style.overflow = 'hidden';
       function fit(){
         inner.style.transform = '';
-        const needed = inner.scrollHeight;
-        const avail = window.innerHeight;
-        const scale = Math.min(1, avail / needed);
+        const neededH = inner.scrollHeight || inner.getBoundingClientRect().height || 0;
+        const neededW = inner.scrollWidth  || inner.getBoundingClientRect().width  || 0;
+        const availH = window.innerHeight || 0;
+        const availW = window.innerWidth  || 0;
+        const scaleH = neededH ? (availH / neededH) : 1;
+        const scaleW = neededW ? (availW / neededW) : 1;
+        const scale = Math.min(1, scaleH, scaleW);
+        inner.style.transformOrigin = 'center center';
         inner.style.transform = `scale(${scale})`;
       }
       window.addEventListener('resize', fit);
@@ -132,11 +137,10 @@
 
         function typeWord(word){
           clearTimers();
-          // Reset carousel to start position
           const banner = document.querySelector('.banner');
           banner.style.animation = 'none';
           banner.style.transform = 'rotateY(0deg)';
-          banner.offsetHeight; // force reflow
+          banner.offsetHeight; 
           banner.style.animation = 'rotate 24s infinite linear';
           document.querySelectorAll('.panel').forEach(p => p.setAttribute('data-text', ''));
 
@@ -154,14 +158,12 @@
             }, i * typeSpeed + preCharDelay));
           }
 
-          // Remove cursor after typing
           typingTimers.push(setTimeout(() => {
             document.querySelectorAll('.panel').forEach(p => p.setAttribute('data-text', word));
           }, word.length * typeSpeed + preCharDelay));
 
           const total = word.length * typeSpeed + displayDelay;
           typingTimers.push(setTimeout(()=>{
-            // No fade, just next
             typingTimers.push(setTimeout(()=>{ typeWord(pickNextPhrase()); }, eraseDelay));
           }, total));
         }
@@ -226,7 +228,6 @@
       }
     })();
 
-    // Generative carousel setup
     (function(){
       const panels = document.querySelectorAll('.panel');
       const panelCount = panels.length;
