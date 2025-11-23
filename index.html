@@ -138,6 +138,7 @@
         function typeWord(word){
           clearTimers();
           const banner = document.querySelector('.banner');
+          banner.dataset.lockAngle = '0';
           banner.style.animation = 'none';
           banner.style.transform = 'rotateY(0deg)';
           banner.offsetHeight; 
@@ -164,6 +165,7 @@
 
           const total = word.length * typeSpeed + displayDelay;
           typingTimers.push(setTimeout(()=>{
+            delete banner.dataset.lockAngle;
             typingTimers.push(setTimeout(()=>{ typeWord(pickNextPhrase()); }, eraseDelay));
           }, total));
         }
@@ -260,6 +262,15 @@
       const period = 24000;
       const degPerMs = -360 / period;
       function tick(now){
+        if(banner.dataset.lockAngle !== undefined){
+          const locked = Number(banner.dataset.lockAngle) || 0;
+          angle = locked;
+          banner.style.webkitTransform = `rotateY(${angle}deg)`;
+          banner.style.transform = `rotateY(${angle}deg)`;
+          last = now;
+          requestAnimationFrame(tick);
+          return;
+        }
         const dt = now - last;
         last = now;
         angle = (angle + degPerMs * dt) % 360;
