@@ -17,23 +17,52 @@
 
 <body>
   <div id="page-wrap">
-    <button id="color-btn" title="Switchup bg Colour" aria-label="Switchup bg Colour">
+    <button id="color-btn" title="" aria-label="">
       <img src="favicon.png" alt="icon" class="color-btn-icon" />
     </button>
     <main class="center">
-    <div class="bg-hero" aria-hidden="true"><span id="bg-hero-word" class="bg-hero-word"></span></div>
+    <div class="scene" aria-hidden="true">
+      <div class="banner">
+        <div class="panel" data-index="1" data-text=""></div>
+        <div class="panel" data-index="2" data-text=""></div>
+        <div class="panel" data-index="3" data-text=""></div>
+        <div class="panel" data-index="4" data-text=""></div>
+        <div class="panel" data-index="5" data-text=""></div>
+        <div class="panel" data-index="6" data-text=""></div>
+        <div class="panel" data-index="7" data-text=""></div>
+        <div class="panel" data-index="8" data-text=""></div>
+        <div class="panel" data-index="9" data-text=""></div>
+        <div class="panel" data-index="10" data-text=""></div>
+        <div class="panel" data-index="11" data-text=""></div>
+        <div class="panel" data-index="12" data-text=""></div>
+        <div class="panel" data-index="13" data-text=""></div>
+        <div class="panel" data-index="14" data-text=""></div>
+        <div class="panel" data-index="15" data-text=""></div>
+        <div class="panel" data-index="16" data-text=""></div>
+        <div class="panel" data-index="17" data-text=""></div>
+        <div class="panel" data-index="18" data-text=""></div>
+        <div class="panel" data-index="19" data-text=""></div>
+        <div class="panel" data-index="20" data-text=""></div>
+        <div class="panel" data-index="21" data-text=""></div>
+        <div class="panel" data-index="22" data-text=""></div>
+        <div class="panel" data-index="23" data-text=""></div>
+        <div class="panel" data-index="24" data-text=""></div>
+      </div>
+      <div class="screen"></div>
+    </div>
+      <div class="portrait" aria-hidden="true"><img src="Me.png" alt="" /></div>
       <div class="center-inner">
       <div class="pencil-intro">Hi I'm</div>
-      <h1 class="name">Emil Vinod</h1>
-      <div class="pencil-after">one('s)</div>
-      <p class="subtitle">Developer ≷ Drummer</p>      
       </div>
+      <h1 class="emil">Emil</h1>
+      <h1 class="vinod">Vinod</h1>
+      <p class="subtitle">Developer ≷ Drummer</p>
     </main>
   </div>
   <script>
     (function(){
       const colors = [
-        '#ff6b35', '#ffffff', '#bf7d5a', '#d55151', '#4e9294', '#c47085', '#ccb096', '#ca6d5c', '#aaa565'
+        '#ff6b35', '#bf7d5a', '#d55151', '#4e9294', '#c47085', '#ccb096', '#ca6d5c', '#aaa565'
       ];
       let idx = 0;
       const btn = document.getElementById('color-btn');
@@ -70,9 +99,6 @@
       }
 
       (function(){
-        const el = document.getElementById('bg-hero-word');
-        if(!el) return;
-        const container = el.parentElement;
         const words = window.bgHeroWords || [];
 
         const phrases = words.map(s => String(s).trim());
@@ -101,80 +127,45 @@
         const fadeDuration = 450;
         const eraseDelay = 350;
 
-        function computeBaseScale(){
-          const measure = document.createElement('span');
-          measure.className = 'bg-hero-word';
-          measure.style.position = 'absolute';
-          measure.style.left = '-9999px';
-          measure.style.top = '0';
-          measure.style.visibility = 'hidden';
-          measure.style.whiteSpace = 'nowrap';
-          document.body.appendChild(measure);
-          let maxW = 0, maxH = 0;
-          for(const p of phrases){
-            measure.textContent = p;
-            const r = measure.getBoundingClientRect();
-            if(r.width > maxW) maxW = r.width;
-            if(r.height > maxH) maxH = r.height;
-          }
-          document.body.removeChild(measure);
-
-          const availW = Math.max(window.innerWidth * 0.92, 200);
-          const availH = Math.max(window.innerHeight * 0.6, 120);
-          let scaleW = availW / Math.max(maxW, 1);
-          let scaleH = availH / Math.max(maxH, 1);
-          let base = Math.min(scaleW, scaleH);
-          base = Math.max(0.4, Math.min(1.4, base));
-
-          container.style.display = 'block';
-          container.style.width = Math.round(maxW) + 'px';
-          container.style.textAlign = 'left';
-          container.style.transformOrigin = 'left center';
-          container.style.left = '6vw';
-          container.dataset.baseScale = base;
-          container.style.transform = `scale(${base})`;
-        }
-
         let typingTimers = [];
         function clearTimers(){ for(const t of typingTimers) clearTimeout(t); typingTimers = []; }
 
         function typeWord(word){
           clearTimers();
-          el.textContent = '';
-          const base = parseFloat(container.dataset.baseScale || '1');
-          container.style.transition = `opacity ${fadeDuration}ms ease, transform ${fadeDuration}ms cubic-bezier(.2,.9,.3,1)`;
-          container.style.opacity = '1';
-          container.style.transform = `scale(${base})`;
+          // Reset carousel to start position
+          const banner = document.querySelector('.banner');
+          banner.style.animation = 'none';
+          banner.style.transform = 'rotateY(0deg)';
+          banner.offsetHeight; // force reflow
+          banner.style.animation = 'rotate 24s infinite linear';
+          document.querySelectorAll('.panel').forEach(p => p.setAttribute('data-text', ''));
 
           const typeSpeed = 60;
           const preCharDelay = 100;
           for(let i=0;i<word.length;i++){
             typingTimers.push(setTimeout(()=>{
-              el.textContent = word.slice(0, i) + '_';
+              const text = word.slice(0, i) + '_';
+              document.querySelectorAll('.panel').forEach(p => p.setAttribute('data-text', text));
             }, i * typeSpeed));
 
             typingTimers.push(setTimeout(()=>{
-              el.textContent = word.slice(0, i + 1);
+              const text = word.slice(0, i + 1);
+              document.querySelectorAll('.panel').forEach(p => p.setAttribute('data-text', text));
             }, i * typeSpeed + preCharDelay));
           }
 
+          // Remove cursor after typing
+          typingTimers.push(setTimeout(() => {
+            document.querySelectorAll('.panel').forEach(p => p.setAttribute('data-text', word));
+          }, word.length * typeSpeed + preCharDelay));
+
           const total = word.length * typeSpeed + displayDelay;
           typingTimers.push(setTimeout(()=>{
-            container.style.opacity = '0';
-            typingTimers.push(setTimeout(()=>{
-              computeBaseScale();
-              typingTimers.push(setTimeout(()=>{ typeWord(pickNextPhrase()); }, eraseDelay));
-            }, fadeDuration));
+            // No fade, just next
+            typingTimers.push(setTimeout(()=>{ typeWord(pickNextPhrase()); }, eraseDelay));
           }, total));
         }
 
-        window.addEventListener('resize', computeBaseScale);
-        window.addEventListener('load', computeBaseScale);
-        if(document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function'){
-          document.fonts.ready.then(computeBaseScale);
-        }
-
-      computeBaseScale();
       setTimeout(()=>{ typeWord(pickNextPhrase()); }, 300);
       })();
     })();
@@ -234,6 +225,23 @@
         document.body.style.cursor = 'auto';
       }
     })();
+
+    // Generative carousel setup
+    (function(){
+      const panels = document.querySelectorAll('.panel');
+      const panelCount = panels.length;
+      panels.forEach((panel, i) => {
+        const index = i + 1;
+        const angle = (360 / panelCount) * i;
+        const hue = (360 / panelCount) * i;
+        const left = 150 * i * -1;
+        panel.style.setProperty('--angle', angle + 'deg');
+        panel.style.setProperty('--hue', hue);
+        panel.style.setProperty('--left', left + 'px');
+      });
+    })();
   </script>
+  </script>
+  
 </body>
 </html>
