@@ -243,6 +243,33 @@
     })();
   </script>
   </script>
-  
+  <script>
+    (function(){
+      const banner = document.querySelector('.banner');
+      if(!banner) return;
+      let needsFallback = false;
+      if(banner.getAnimations){
+        try{ needsFallback = banner.getAnimations().length === 0; }catch(e){ needsFallback = false; }
+      } else {
+        const cs = getComputedStyle(banner);
+        needsFallback = (cs.animationName === 'none' || cs.webkitAnimationName === 'none');
+      }
+      if(!needsFallback) return;
+      let angle = 0;
+      let last = performance.now();
+      const period = 24000;
+      const degPerMs = -360 / period;
+      function tick(now){
+        const dt = now - last;
+        last = now;
+        angle = (angle + degPerMs * dt) % 360;
+        banner.style.webkitTransform = `rotateY(${angle}deg)`;
+        banner.style.transform = `rotateY(${angle}deg)`;
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    })();
+  </script>
+
 </body>
 </html>

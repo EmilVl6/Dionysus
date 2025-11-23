@@ -117,7 +117,9 @@ body {
     color: var(--text);
     background: var(--bg);
     min-height: 100vh;
+    -webkit-perspective: 500px;
     perspective: 500px;
+    -webkit-perspective-origin: 50% calc(50% - 150px);
     perspective-origin: 50% calc(50% - 150px);
     overflow: hidden;
     
@@ -399,11 +401,12 @@ a:hover ~ .cursor-circle, button:hover ~ .cursor-circle, .btn:hover ~ .cursor-ci
 }
 
 .scene {
-        position: absolute;
-        left: 50%;
-        top: 105%;
-        transform: translate(-50%, -50%);
-    transform-style: preserve-3d;
+                position: absolute;
+                left: 50%;
+                top: 105%;
+                transform: translate(-50%, -50%);
+        -webkit-transform-style: preserve-3d;
+        transform-style: preserve-3d;
     z-index: 3;
     --radius: 570px;
     --panel-count: 24;
@@ -411,17 +414,28 @@ a:hover ~ .cursor-circle, button:hover ~ .cursor-circle, .btn:hover ~ .cursor-ci
 
 .banner {
   display: flex;
-  transform-style: preserve-3d;
-  animation: rotate 24s infinite linear;
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+    -webkit-animation: rotate 24s infinite linear;
+    animation: rotate 24s infinite linear;
 }
 
 @keyframes rotate {
   to { transform: rotateY(-360deg); }
 }
 
+@-webkit-keyframes rotate {
+    to { -webkit-transform: rotateY(-360deg); transform: rotateY(-360deg); }
+}
+
 .panel {
   position: absolute;
-  transform: translate(-50%, -50%) rotateY(var(--angle)) translateZ(var(--radius)); 
+    -webkit-transform: translate(-50%, -50%) rotateY(var(--angle)) translateZ(var(--radius));
+    transform: translate(-50%, -50%) rotateY(var(--angle)) translateZ(var(--radius));
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   width: 150px;
   height: 400px;
   overflow: hidden;
