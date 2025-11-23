@@ -138,9 +138,9 @@
         function typeWord(word){
           clearTimers();
           const banner = document.querySelector('.banner');
-          banner.dataset.lockAngle = '-75';
+          banner.dataset.lockAngle = '0';
           banner.style.animation = 'none';
-          banner.style.transform = 'rotateY(-75deg)';
+          banner.style.transform = 'rotateY(0deg)';
           banner.offsetHeight; 
           banner.style.animation = 'rotate 24s infinite linear';
           document.querySelectorAll('.panel').forEach(p => p.setAttribute('data-text', ''));
