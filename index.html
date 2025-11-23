@@ -244,6 +244,42 @@
       });
     })();
   </script>
+  <script>
+    (function(){
+      function updateCarousel(){
+        const root = document.documentElement;
+        const panels = document.querySelectorAll('.panel');
+        const panelCount = panels.length || 24;
+        const vw = Math.max(window.innerWidth || 0, 320);
+        const vh = Math.max(window.innerHeight || 0, 320);
+        const portraitImg = document.querySelector('.portrait img');
+        const imgH = portraitImg ? portraitImg.getBoundingClientRect().height : vh * 0.6;
+
+        const radiusByWidth = vw * 0.55;
+        const radiusByHeight = vh * 0.6;
+        let radius = Math.max(240, Math.min(Math.max(radiusByWidth, radiusByHeight), 1400));
+
+        const edgePadding = 24; 
+        const panelWidth = 150; 
+        const visibleWidth = 2 * radius + panelWidth;
+        if(visibleWidth < vw - edgePadding) {
+          radius = Math.max(radius, (vw - panelWidth - edgePadding) / 2);
+        }
+
+        const bottomPx = Math.round(vh * 0.15);
+
+        root.style.setProperty('--carousel-radius', Math.round(radius) + 'px');
+        root.style.setProperty('--carousel-bottom', bottomPx + 'px');
+      }
+
+      window.addEventListener('resize', updateCarousel);
+      window.addEventListener('load', () => setTimeout(updateCarousel, 80));
+      if (document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function') {
+        document.fonts.ready.then(updateCarousel);
+      }
+      updateCarousel();
+    })();
+  </script>
   </script>
   <script>
     (function(){
