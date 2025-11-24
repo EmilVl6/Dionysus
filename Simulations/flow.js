@@ -19,7 +19,9 @@ export default function start(api){
   for(let i=0;i<200;i++) particles.push({x:Math.random()*cols, y:Math.random()*rows, life: 60+Math.floor(Math.random()*120)});
   let running=true;
   function step(){
-    for(let y=0;y<rows;y++) for(let x=0;x<cols;x++) pixelGrid.setPixel(x,y, `hsl(${base.h}, ${base.s}%, ${Math.max(2, base.l-2)}%)`);
+    const bgH = base.h, bgS = base.s, bgL = base.l;
+    const bgColor = `hsl(${bgH}, ${bgS}%, ${bgL}%)`;
+    for(let y=0;y<rows;y++) for(let x=0;x<cols;x++) pixelGrid.setPixel(x,y, bgColor);
 
     for(let i=particles.length-1;i>=0;i--){
       const p = particles[i];
@@ -29,12 +31,9 @@ export default function start(api){
       p.life--;
       const xi = Math.floor((p.x%cols+cols)%cols), yi = Math.floor((p.y%rows+rows)%rows);
       const intensity = Math.max(0, Math.min(1, p.life / 180));
-      const bgRGB = getBaseRGB();
-      const factor = Math.max(0.25, 1 - 0.6 * intensity);
-      const r = Math.round(bgRGB.r * factor);
-      const g = Math.round(bgRGB.g * factor);
-      const b = Math.round(bgRGB.b * factor);
-      pixelGrid.setPixel(xi, yi, `rgb(${r}, ${g}, ${b})`);
+      const darken = Math.round(36 * intensity);
+      const L = Math.max(2, Math.min(96, bgL - darken));
+      pixelGrid.setPixel(xi, yi, `hsl(${bgH}, ${bgS}%, ${L}%)`);
       if(p.life<=0) particles.splice(i,1);
     }
     while(particles.length<200) particles.push({x:Math.random()*cols, y:Math.random()*rows, life:60+Math.floor(Math.random()*120)});
