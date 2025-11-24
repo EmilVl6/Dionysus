@@ -30,7 +30,7 @@ export default function start(api){
 
     for(let y=0;y<rows;y++) for(let x=0;x<cols;x++){
       const v = grid[idx(x,y)];
-      const L = v? Math.max(2, Math.min(98, base.l + 18)) : Math.max(2, base.l - 6);
+      const L = v? Math.max(2, Math.min(98, base.l - 10)) : base.l + 0;
       pixelGrid.setPixel(x,y, `hsl(${base.h}, ${base.s}%, ${L}%)`);
     }
   }

@@ -6,6 +6,7 @@ export default function start(api){
   function parseHex(hex){ hex = String(hex||'').trim().replace('#',''); if(hex.length===3) hex=hex.split('').map(c=>c+c).join(''); const r=parseInt(hex.slice(0,2),16)||244; const g_=parseInt(hex.slice(2,4),16)||246; const b=parseInt(hex.slice(4,6),16)||248; return {r,g:g_,b}; }
   function rgbToHsl(r,g,b){ r/=255; g/=255; b/=255; const max=Math.max(r,g,b), min=Math.min(r,g,b); let h=0,s=0,l=(max+min)/2; if(max!==min){ const d=max-min; s=l>0.5?d/(2-max-min):d/(max+min); switch(max){case r: h=(g-b)/d + (g<b?6:0); break; case g: h=(b-r)/d +2; break; case b: h=(r-g)/d +4; break;} h/=6;} return {h:Math.round(h*360), s:Math.round(s*100), l:Math.round(l*100)}; }
   function getBaseHSL(){ try{ const cs=getComputedStyle(root); let bg=cs.getPropertyValue('--bg')||cs.background||'#f4f6f8'; bg=String(bg).trim(); if(bg.startsWith('#')){const c=parseHex(bg); return rgbToHsl(c.r,c.g,c.b);} const m=bg.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/); if(m) return rgbToHsl(Number(m[1]),Number(m[2]),Number(m[3])); }catch(e){} return {h:200,s:8,l:94}; }
+  function getBaseRGB(){ try{ const cs=getComputedStyle(root); let bg=cs.getPropertyValue('--bg')||cs.background||'#f4f6f8'; bg=String(bg).trim(); if(bg.startsWith('#')){return parseHex(bg);} const m=bg.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/); if(m) return {r: Number(m[1]), g: Number(m[2]), b: Number(m[3])}; }catch(e){} return {r:244,g:246,b:248}; }
 
   const base=getBaseHSL();
   const cols=g.cols, rows=g.rows;
@@ -27,8 +28,13 @@ export default function start(api){
       p.y += Math.sin(a) * 0.6;
       p.life--;
       const xi = Math.floor((p.x%cols+cols)%cols), yi = Math.floor((p.y%rows+rows)%rows);
-      const L = Math.max(2, Math.min(98, base.l + Math.round((p.life/180)*30)));
-      pixelGrid.setPixel(xi, yi, `hsl(${base.h}, ${base.s}%, ${L}%)`);
+      const intensity = Math.max(0, Math.min(1, p.life / 180));
+      const bgRGB = getBaseRGB();
+      const factor = Math.max(0.25, 1 - 0.6 * intensity);
+      const r = Math.round(bgRGB.r * factor);
+      const g = Math.round(bgRGB.g * factor);
+      const b = Math.round(bgRGB.b * factor);
+      pixelGrid.setPixel(xi, yi, `rgb(${r}, ${g}, ${b})`);
       if(p.life<=0) particles.splice(i,1);
     }
     while(particles.length<200) particles.push({x:Math.random()*cols, y:Math.random()*rows, life:60+Math.floor(Math.random()*120)});
