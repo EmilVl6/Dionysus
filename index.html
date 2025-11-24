@@ -16,6 +16,7 @@
 </head>
 
 <body>
+  <div class="pixel-grid" aria-hidden="true"></div>
   <div id="page-wrap">
     <button id="color-btn" title="" aria-label="">
       <img src="favicon.png" alt="icon" class="color-btn-icon" />
@@ -280,6 +281,138 @@
       updateCarousel();
     })();
   </script>
+  <script>
+    (function(){
+      const GRID = {};
+      const container = document.querySelector('.pixel-grid');
+      if(!container) return;
+
+      function buildGrid(cellSize = 12){
+        while(container.firstChild) container.removeChild(container.firstChild);
+        const vw = Math.max(window.innerWidth || 0, 320);
+        const vh = Math.max(window.innerHeight || 0, 320);
+        const cols = Math.ceil(vw / cellSize) + 1;
+        const rows = Math.ceil(vh / cellSize) + 1;
+        container.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+        container.style.gridTemplateRows = `repeat(${rows}, ${cellSize}px)`;
+        container.style.pointerEvents = 'auto';
+
+        const frag = document.createDocumentFragment();
+        const total = cols * rows;
+        for(let i=0;i<total;i++){
+          const d = document.createElement('div');
+          d.className = 'pixel';
+          d.dataset.index = i;
+          d.style.background = 'transparent';
+          frag.appendChild(d);
+        }
+        container.appendChild(frag);
+
+        GRID.cols = cols; GRID.rows = rows; GRID.cellSize = cellSize;
+        GRID.container = container;
+        GRID.elements = container.children;
+      }
+
+      GRID._buffer = [];
+      GRID._flushScheduled = false;
+      function _flushBuffer(){
+        GRID._flushScheduled = false;
+        if(!GRID._buffer || GRID._buffer.length === 0) { GRID._buffer.length = 0; return; }
+        for(let i=0;i<GRID._buffer.length;i++){
+          const item = GRID._buffer[i];
+          const el = GRID.elements[item.idx];
+          if(el) el.style.background = item.color || 'transparent';
+        }
+        GRID._buffer.length = 0;
+      }
+      function setPixel(x,y,color){
+        if(!GRID.container) return false;
+        if(x < 0 || y < 0 || x >= GRID.cols || y >= GRID.rows) return false;
+        const idx = y * GRID.cols + x;
+        GRID._buffer.push({ idx, color: color || 'transparent' });
+        if(!GRID._flushScheduled){ GRID._flushScheduled = true; requestAnimationFrame(_flushBuffer); }
+        return true;
+      }
+
+      function getPixel(x,y){
+        if(!GRID.container) return null;
+        if(x < 0 || y < 0 || x >= GRID.cols || y >= GRID.rows) return null;
+        const idx = y * GRID.cols + x;
+        const el = GRID.elements[idx];
+        return el ? (el.style.background || null) : null;
+      }
+
+      function clearGrid(){
+        if(!GRID.container) return;
+        for(let i=0;i<GRID.elements.length;i++) GRID._buffer.push({ idx: i, color: 'transparent' });
+        if(!GRID._flushScheduled){ GRID._flushScheduled = true; requestAnimationFrame(_flushBuffer); }
+      }
+
+      let paintColor = 'rgba(255,107,53,0.95)';
+      container.addEventListener('pointerdown', (ev)=>{
+        if(ev.button !== 0) return;
+        const rect = container.getBoundingClientRect();
+        const cx = Math.floor((ev.clientX - rect.left) / GRID.cellSize);
+        const cy = Math.floor((ev.clientY - rect.top) / GRID.cellSize);
+        setPixel(cx, cy, paintColor);
+      });
+
+      window.pixelGrid = {
+        build: buildGrid,
+        setPixel, getPixel, clear: clearGrid,
+        GRID
+      };
+
+      function onResize(){
+        const base = window.innerWidth > 1600 ? 14 : (window.innerWidth > 1000 ? 12 : 10);
+        buildGrid(base);
+      }
+      window.addEventListener('resize', onResize);
+      window.addEventListener('load', onResize);
+      onResize();
+    })();
+  </script>
+  <script>
+    (function(){
+      let simFiles = [];
+      const api = { pixelGrid: window.pixelGrid, root: document.documentElement };
+      let idx = 0;
+      let currentStop = null;
+      const runFor = 8000;
+
+      async function loadSimList(){
+        try{
+          const listMod = await import('./Simulations/index.js');
+          simFiles = listMod && listMod.default ? listMod.default : [];
+        }catch(e){
+          console.warn('failed loading Simulations index, falling back', e);
+          simFiles = ['./Simulations/rain.js'];
+        }
+      }
+
+      async function runNext(){
+        if(!window.pixelGrid || !simFiles.length) return;
+        if(currentStop) { try{ currentStop(); }catch(e){} currentStop = null; }
+        const file = simFiles[idx % simFiles.length];
+        idx++;
+        try{
+          const mod = await import(file);
+          if(mod && typeof mod.default === 'function'){
+            window.pixelGrid.clear();
+            currentStop = mod.default(api) || null;
+          }
+        }catch(e){ console.warn('failed loading sim', file, e); }
+        setTimeout(runNext, runFor);
+      }
+
+      async function tryStart(){
+        await loadSimList();
+        if(!simFiles.length) return;
+        if(window.pixelGrid && window.pixelGrid.GRID){ runNext(); }
+        else setTimeout(tryStart, 200);
+      }
+      tryStart();
+    })();
   </script>
   <script>
     (function(){

@@ -462,3 +462,26 @@ a:hover ~ .cursor-circle, button:hover ~ .cursor-circle, .btn:hover ~ .cursor-ci
   width: 400px; height: 400px;
   transform: translate(-50%, -50%);
 }
+
+.pixel-grid{
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    display: grid;
+    align-items: start;
+    justify-items: start;
+    background: transparent;
+}
+.pixel-grid .pixel{
+    box-sizing: border-box;
+    width: 12px;
+    height: 12px;
+    background: transparent;
+    border: 0.5px solid rgba(255,255,255,0.03);
+    pointer-events: auto;  
+}
+
+@media (max-width:640px){
+    .pixel-grid .pixel{ width: 10px; height: 10px; border-width: 0.4px; }
+}
