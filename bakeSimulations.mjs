@@ -58,8 +58,14 @@ async function bakeSimulation(name, modulePath) {
   };
 
   try {
-    const fullPath = path.join(__dirname, modulePath);
+    const fullPath = new URL(modulePath, import.meta.url).href;
+    console.log(`  Loading: ${fullPath}`);
     const mod = await import(fullPath);
+    
+    if (!mod.default || typeof mod.default !== 'function') {
+      throw new Error('No default export found');
+    }
+    
     const stopFn = mod.default(api);
     
     await new Promise((resolve) => {
@@ -81,6 +87,7 @@ async function bakeSimulation(name, modulePath) {
     return { cols: COLS, rows: ROWS, frames: grid.frames };
   } catch (error) {
     console.error(`Failed to bake ${name}:`, error.message);
+    console.error(error.stack);
     return null;
   }
 }
