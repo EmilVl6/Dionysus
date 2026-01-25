@@ -389,7 +389,7 @@
   </script>
   <script>
     (function(){
-      const simFiles = [
+      const bakedFiles = [
         './Baked/plasma.json',
         './Baked/life.json',
         './Baked/waves.json',
@@ -398,33 +398,68 @@
         './Baked/sand.json',
         './Baked/bars-radix.json'
       ];
+
+      const liveFiles = [
+        './Simulations/plasma.js',
+        './Simulations/life.js',
+        './Simulations/waves.js',
+        './Simulations/flow.js',
+        './Simulations/rain.js',
+        './Simulations/sand.js',
+        './Simulations/bars-radix.js'
+      ];
       
       const api = { pixelGrid: window.pixelGrid, root: document.documentElement };
       let idx = 0;
       let currentStop = null;
       const runFor = 6000;
+      let useBaked = true;
 
       async function runNext(){
-        if(!window.pixelGrid || !simFiles.length) return;
+        if(!window.pixelGrid) return;
         
         if(currentStop) { 
           try{ currentStop(); }catch(e){} 
           currentStop = null; 
         }
         
-        const file = simFiles[idx % simFiles.length];
+        const bakedFile = bakedFiles[idx % bakedFiles.length];
+        const liveFile = liveFiles[idx % liveFiles.length];
         idx++;
         
-        try{
-          const response = await fetch(file);
-          const data = await response.json();
-          
-          if(data && data.frames){
-            window.pixelGrid.clear();
-            currentStop = playBaked(data, api);
+        if(useBaked) {
+          try{
+            const response = await fetch(bakedFile);
+            if(!response.ok) throw new Error('Baked file not found');
+            const data = await response.json();
+            
+            if(data && data.frames){
+              window.pixelGrid.clear();
+              currentStop = playBaked(data, api);
+            }
+          }catch(e){ 
+            console.log('Baked files not ready, using live simulation');
+            useBaked = false;
+            try{
+              const mod = await import(liveFile);
+              if(mod && typeof mod.default === 'function'){
+                window.pixelGrid.clear();
+                currentStop = mod.default(api) || null;
+              }
+            }catch(e2){
+              console.warn('Failed to load simulation', e2);
+            }
           }
-        }catch(e){ 
-          console.warn('Failed to load baked sim', file, e); 
+        } else {
+          try{
+            const mod = await import(liveFile);
+            if(mod && typeof mod.default === 'function'){
+              window.pixelGrid.clear();
+              currentStop = mod.default(api) || null;
+            }
+          }catch(e){
+            console.warn('Failed to load simulation', e);
+          }
         }
         
         setTimeout(runNext, runFor);
