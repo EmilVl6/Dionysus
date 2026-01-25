@@ -287,49 +287,73 @@
       const container = document.querySelector('.pixel-grid');
       if(!container) return;
 
-      function buildGrid(cellSize = 12){
-        while(container.firstChild) container.removeChild(container.firstChild);
-        const vw = Math.max(window.innerWidth || 0, 320);
-        const vh = Math.max(window.innerHeight || 0, 320);
-        const cols = Math.ceil(vw / cellSize) + 1;
-        const rows = Math.ceil(vh / cellSize) + 1;
-        container.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
-        container.style.gridTemplateRows = `repeat(${rows}, ${cellSize}px)`;
-        container.style.pointerEvents = 'auto';
+      const FIXED_COLS = 80;
+      const FIXED_ROWS = 80;
+      const CELL_SIZE = 8;
 
+      function buildFixedGrid(){
         const frag = document.createDocumentFragment();
-        const total = cols * rows;
+        const total = FIXED_COLS * FIXED_ROWS;
         for(let i=0;i<total;i++){
           const d = document.createElement('div');
           d.className = 'pixel';
-          d.dataset.index = i;
-          d.style.background = 'transparent';
           frag.appendChild(d);
         }
         container.appendChild(frag);
+        
+        container.style.gridTemplateColumns = `repeat(${FIXED_COLS}, ${CELL_SIZE}px)`;
+        container.style.gridTemplateRows = `repeat(${FIXED_ROWS}, ${CELL_SIZE}px)`;
+        container.style.width = (FIXED_COLS * CELL_SIZE) + 'px';
+        container.style.height = (FIXED_ROWS * CELL_SIZE) + 'px';
+        container.style.willChange = 'transform';
 
-        GRID.cols = cols; GRID.rows = rows; GRID.cellSize = cellSize;
+        GRID.cols = FIXED_COLS;
+        GRID.rows = FIXED_ROWS;
+        GRID.cellSize = CELL_SIZE;
         GRID.container = container;
         GRID.elements = container.children;
       }
 
-      GRID._buffer = [];
+      let scaleRAF = null;
+      function scaleGrid(){
+        if(scaleRAF) return;
+        scaleRAF = requestAnimationFrame(() => {
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+          const gridWidth = FIXED_COLS * CELL_SIZE;
+          const gridHeight = FIXED_ROWS * CELL_SIZE;
+          
+          const scaleX = vw / gridWidth;
+          const scaleY = vh / gridHeight;
+          const scale = Math.max(scaleX, scaleY) * 1.1;
+          
+          container.style.transform = `scale(${scale})`;
+          container.style.transformOrigin = 'center center';
+          container.style.left = '50%';
+          container.style.top = '50%';
+          container.style.marginLeft = -(gridWidth / 2) + 'px';
+          container.style.marginTop = -(gridHeight / 2) + 'px';
+          
+          scaleRAF = null;
+        });
+      }
+
+      GRID._buffer = new Map();
       GRID._flushScheduled = false;
       function _flushBuffer(){
         GRID._flushScheduled = false;
-        if(!GRID._buffer || GRID._buffer.length === 0) { GRID._buffer.length = 0; return; }
-        for(let i=0;i<GRID._buffer.length;i++){
-          const item = GRID._buffer[i];
-          const el = GRID.elements[item.idx];
-          if(el) el.style.background = item.color || 'transparent';
-        }
-        GRID._buffer.length = 0;
+        if(!GRID._buffer || GRID._buffer.size === 0) { GRID._buffer.clear(); return; }
+        GRID._buffer.forEach((color, idx) => {
+          const el = GRID.elements[idx];
+          if(el) el.style.background = color;
+        });
+        GRID._buffer.clear();
       }
       function setPixel(x,y,color){
         if(!GRID.container) return false;
         if(x < 0 || y < 0 || x >= GRID.cols || y >= GRID.rows) return false;
         const idx = y * GRID.cols + x;
-        GRID._buffer.push({ idx, color: color || 'transparent' });
+        GRID._buffer.set(idx, color || 'transparent');
         if(!GRID._flushScheduled){ GRID._flushScheduled = true; requestAnimationFrame(_flushBuffer); }
         return true;
       }
@@ -344,73 +368,102 @@
 
       function clearGrid(){
         if(!GRID.container) return;
-        for(let i=0;i<GRID.elements.length;i++) GRID._buffer.push({ idx: i, color: 'transparent' });
+        for(let i=0;i<GRID.elements.length;i++) GRID._buffer.set(i, 'transparent');
         if(!GRID._flushScheduled){ GRID._flushScheduled = true; requestAnimationFrame(_flushBuffer); }
       }
 
-      let paintColor = 'rgba(255,107,53,0.95)';
-      container.addEventListener('pointerdown', (ev)=>{
-        if(ev.button !== 0) return;
-        const rect = container.getBoundingClientRect();
-        const cx = Math.floor((ev.clientX - rect.left) / GRID.cellSize);
-        const cy = Math.floor((ev.clientY - rect.top) / GRID.cellSize);
-        setPixel(cx, cy, paintColor);
-      });
-
       window.pixelGrid = {
-        build: buildGrid,
         setPixel, getPixel, clear: clearGrid,
         GRID
       };
 
-      function onResize(){
-        const base = window.innerWidth > 1600 ? 14 : (window.innerWidth > 1000 ? 12 : 10);
-        buildGrid(base);
-      }
-      window.addEventListener('resize', onResize);
-      window.addEventListener('load', onResize);
-      onResize();
+      buildFixedGrid();
+      scaleGrid();
+      
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(scaleGrid, 100);
+      });
     })();
   </script>
   <script>
     (function(){
-      let simFiles = [];
+      const simFiles = [
+        './Baked/plasma.json',
+        './Baked/life.json',
+        './Baked/waves.json',
+        './Baked/flow.json',
+        './Baked/rain.json',
+        './Baked/sand.json',
+        './Baked/bars-radix.json'
+      ];
+      
       const api = { pixelGrid: window.pixelGrid, root: document.documentElement };
       let idx = 0;
       let currentStop = null;
-      const runFor = 8000;
-
-      async function loadSimList(){
-        try{
-          const listMod = await import('./Simulations/index.js');
-          simFiles = listMod && listMod.default ? listMod.default : [];
-        }catch(e){
-          console.warn('failed loading Simulations index, falling back', e);
-          simFiles = ['./Simulations/rain.js'];
-        }
-      }
+      const runFor = 6000;
 
       async function runNext(){
         if(!window.pixelGrid || !simFiles.length) return;
-        if(currentStop) { try{ currentStop(); }catch(e){} currentStop = null; }
+        
+        if(currentStop) { 
+          try{ currentStop(); }catch(e){} 
+          currentStop = null; 
+        }
+        
         const file = simFiles[idx % simFiles.length];
         idx++;
+        
         try{
-          const mod = await import(file);
-          if(mod && typeof mod.default === 'function'){
+          const response = await fetch(file);
+          const data = await response.json();
+          
+          if(data && data.frames){
             window.pixelGrid.clear();
-            currentStop = mod.default(api) || null;
+            currentStop = playBaked(data, api);
           }
-        }catch(e){ console.warn('failed loading sim', file, e); }
+        }catch(e){ 
+          console.warn('Failed to load baked sim', file, e); 
+        }
+        
         setTimeout(runNext, runFor);
       }
 
-      async function tryStart(){
-        await loadSimList();
-        if(!simFiles.length) return;
-        if(window.pixelGrid && window.pixelGrid.GRID){ runNext(); }
-        else setTimeout(tryStart, 200);
+      function playBaked(data, api) {
+        const { pixelGrid } = api;
+        let frame = 0;
+        let running = true;
+
+        function render() {
+          if (!running) return;
+          
+          const frameData = data.frames[frame % data.frames.length];
+          pixelGrid.clear();
+          
+          for (const [key, color] of Object.entries(frameData)) {
+            const [x, y] = key.split(',').map(Number);
+            pixelGrid.setPixel(x, y, color);
+          }
+          
+          frame++;
+          setTimeout(() => {
+            if (running) requestAnimationFrame(render);
+          }, 50);
+        }
+
+        requestAnimationFrame(render);
+        return () => { running = false; };
       }
+
+      function tryStart(){
+        if(window.pixelGrid && window.pixelGrid.GRID){ 
+          runNext(); 
+        } else { 
+          setTimeout(tryStart, 200); 
+        }
+      }
+      
       tryStart();
     })();
   </script>
