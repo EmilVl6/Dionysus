@@ -58,7 +58,8 @@ async function bakeSimulation(name, modulePath) {
   };
 
   try {
-    const mod = await import(modulePath);
+    const fullPath = path.join(__dirname, modulePath);
+    const mod = await import(fullPath);
     const stopFn = mod.default(api);
     
     await new Promise((resolve) => {
@@ -68,15 +69,18 @@ async function bakeSimulation(name, modulePath) {
         frame++;
         if (frame >= FRAMES) {
           clearInterval(interval);
-          if (stopFn) stopFn();
+          if (stopFn && typeof stopFn === 'function') {
+            try { stopFn(); } catch(e) {}
+          }
           resolve();
         }
       }, 50);
     });
 
+    console.log(`${name}: ${grid.frames.length} frames captured`);
     return { cols: COLS, rows: ROWS, frames: grid.frames };
   } catch (error) {
-    console.error(`Failed to bake ${name}:`, error);
+    console.error(`Failed to bake ${name}:`, error.message);
     return null;
   }
 }
@@ -102,7 +106,10 @@ for (const [name, file] of sims) {
     const outputPath = path.join(bakedDir, `${name}.json`);
     fs.writeFileSync(outputPath, JSON.stringify(data));
     console.log(`Saved ${name}.json (${data.frames.length} frames)`);
+  } else {
+    console.log(`Skipped ${name}.json (baking failed)`);
   }
 }
 
-console.log('\nBaked');
+console.log('\nBaking complete');
+process.exit(0);
