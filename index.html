@@ -419,7 +419,6 @@
       async function runNext(){
         if(!window.pixelGrid) return;
         
-        // Check if color has changed from initial
         const currentColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
         if(currentColor !== initialColor && useBaked) {
           console.log('Color changed, switching to live simulations');
