@@ -414,9 +414,17 @@
       let currentStop = null;
       const runFor = 6000;
       let useBaked = true;
+      let initialColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
 
       async function runNext(){
         if(!window.pixelGrid) return;
+        
+        // Check if color has changed from initial
+        const currentColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+        if(currentColor !== initialColor && useBaked) {
+          console.log('Color changed, switching to live simulations');
+          useBaked = false;
+        }
         
         if(currentStop) { 
           try{ currentStop(); }catch(e){} 
@@ -473,12 +481,15 @@
         function render() {
           if (!running) return;
           
+          const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
           const frameData = data.frames[frame % data.frames.length];
           pixelGrid.clear();
           
           for (const [key, color] of Object.entries(frameData)) {
             const [x, y] = key.split(',').map(Number);
-            pixelGrid.setPixel(x, y, color);
+            if(color && color !== 'transparent') {
+              pixelGrid.setPixel(x, y, themeColor);
+            }
           }
           
           frame++;

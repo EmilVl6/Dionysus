@@ -41,8 +41,8 @@ global.document = {
 };
 
 global.getComputedStyle = () => ({
-  getPropertyValue: () => '#ff6b35',
-  background: '#ff6b35'
+  getPropertyValue: () => '#ffffff',
+  background: '#ffffff'
 });
 
 global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
@@ -54,7 +54,7 @@ async function bakeSimulation(name, modulePath) {
   const grid = new GridCapture();
   const api = {
     pixelGrid: grid,
-    root: { style: { getPropertyValue: () => '#ff6b35' } }
+    root: { style: { getPropertyValue: () => '#ffffff' } }
   };
 
   try {
