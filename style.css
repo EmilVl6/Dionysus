@@ -465,7 +465,7 @@ a:hover ~ .cursor-circle, button:hover ~ .cursor-circle, .btn:hover ~ .cursor-ci
 
 .pixel-grid{
     position: fixed;
-    z-index: 0;
+    z-index: -1;
     pointer-events: none;
     display: grid;
     background: transparent;
