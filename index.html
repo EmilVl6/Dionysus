@@ -68,11 +68,13 @@
       let idx = 0;
       const btn = document.getElementById('color-btn');
       const root = document.documentElement;
+      window.onColorChange = null;
       function setBg(i){
         idx = i;
         root.style.setProperty('--bg', colors[idx]);
         btn.style.background = colors[(idx+1)%colors.length];
         btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+        if(window.onColorChange) window.onColorChange(colors[idx]);
       }
       btn.addEventListener('click', function(){
         setBg((idx+1)%colors.length);
@@ -412,18 +414,26 @@
       const api = { pixelGrid: window.pixelGrid, root: document.documentElement };
       let idx = 0;
       let currentStop = null;
+      let currentFrameData = null;
       const runFor = 6000;
       let useBaked = true;
-      let initialColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+      let nextBakedData = null;
+
+      async function preloadNext(){
+        const nextIdx = idx % bakedFiles.length;
+        const nextFile = bakedFiles[nextIdx];
+        if(useBaked){
+          try{
+            const response = await fetch(nextFile);
+            if(response.ok){
+              nextBakedData = await response.json();
+            }
+          }catch(e){}
+        }
+      }
 
       async function runNext(){
         if(!window.pixelGrid) return;
-        
-        const currentColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
-        if(currentColor !== initialColor && useBaked) {
-          console.log('Color changed, switching to live simulations');
-          useBaked = false;
-        }
         
         if(currentStop) { 
           try{ currentStop(); }catch(e){} 
@@ -436,9 +446,14 @@
         
         if(useBaked) {
           try{
-            const response = await fetch(bakedFile);
-            if(!response.ok) throw new Error('Baked file not found');
-            const data = await response.json();
+            let data = nextBakedData;
+            if(!data){
+              const response = await fetch(bakedFile);
+              if(!response.ok) throw new Error('Baked file not found');
+              data = await response.json();
+            }
+            nextBakedData = null;
+            preloadNext();
             
             if(data && data.frames){
               window.pixelGrid.clear();
@@ -476,17 +491,27 @@
         const { pixelGrid } = api;
         let frame = 0;
         let running = true;
+        let currentColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+        
+        window.onColorChange = function(newColor) {
+          currentColor = newColor;
+          if(running && currentFrameData){
+            for (const [key, color] of Object.entries(currentFrameData)) {
+              const [x, y] = key.split(',').map(Number);
+              pixelGrid.setPixel(x, y, currentColor);
+            }
+          }
+        };
 
         function render() {
           if (!running) return;
           
-          const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
-          const frameData = data.frames[frame % data.frames.length];
+          currentFrameData = data.frames[frame % data.frames.length];
           pixelGrid.clear();
           
-          for (const [key, color] of Object.entries(frameData)) {
+          for (const [key, color] of Object.entries(currentFrameData)) {
             const [x, y] = key.split(',').map(Number);
-            pixelGrid.setPixel(x, y, themeColor);
+            pixelGrid.setPixel(x, y, currentColor);
           }
           
           frame++;
@@ -496,7 +521,10 @@
         }
 
         requestAnimationFrame(render);
-        return () => { running = false; };
+        return () => { 
+          running = false;
+          window.onColorChange = null;
+        };
       }
 
       function tryStart(){
