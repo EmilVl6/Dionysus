@@ -496,6 +496,7 @@
         let frame = 0;
         let running = true;
         let currentColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+        console.log('[playBaked] Starting with color:', currentColor);
         
         window.onColorChange = function(newColor) {
           currentColor = newColor;
@@ -513,10 +514,13 @@
           currentFrameData = data.frames[frame % data.frames.length];
           pixelGrid.clear();
           
+          let pixelCount = 0;
           for (const [key, color] of Object.entries(currentFrameData)) {
             const [x, y] = key.split(',').map(Number);
             pixelGrid.setPixel(x, y, currentColor);
+            pixelCount++;
           }
+          if(frame === 0) console.log('[playBaked] First frame rendered', pixelCount, 'pixels');
           
           frame++;
           setTimeout(() => {
