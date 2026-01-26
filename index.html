@@ -486,9 +486,7 @@
           
           for (const [key, color] of Object.entries(frameData)) {
             const [x, y] = key.split(',').map(Number);
-            if(color && color !== 'transparent') {
-              pixelGrid.setPixel(x, y, themeColor);
-            }
+            pixelGrid.setPixel(x, y, themeColor);
           }
           
           frame++;
