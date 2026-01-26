@@ -6,6 +6,7 @@ on:
     paths:
       - 'Simulations/*.js'
       - 'bakeSimulations.mjs'
+      - 'package.json'
   workflow_dispatch:
 
 permissions:
