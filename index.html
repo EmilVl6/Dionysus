@@ -433,6 +433,7 @@
       }
 
       async function runNext(){
+        console.log('[runNext] Starting, pixelGrid:', !!window.pixelGrid);
         if(!window.pixelGrid) return;
         
         if(currentStop) { 
@@ -442,12 +443,14 @@
         
         const bakedFile = bakedFiles[idx % bakedFiles.length];
         const liveFile = liveFiles[idx % liveFiles.length];
+        console.log('[runNext] Loading:', bakedFile);
         idx++;
         
         if(useBaked) {
           try{
             let data = nextBakedData;
             if(!data){
+              console.log('[runNext] Fetching:', bakedFile);
               const response = await fetch(bakedFile);
               if(!response.ok) throw new Error('Baked file not found');
               data = await response.json();
@@ -456,6 +459,7 @@
             preloadNext();
             
             if(data && data.frames){
+              console.log('[runNext] Playing baked with', data.frames.length, 'frames');
               window.pixelGrid.clear();
               currentStop = playBaked(data, api);
             }
@@ -528,7 +532,9 @@
       }
 
       function tryStart(){
+        console.log('[tryStart] pixelGrid:', !!window.pixelGrid, 'GRID:', !!(window.pixelGrid && window.pixelGrid.GRID));
         if(window.pixelGrid && window.pixelGrid.GRID){ 
+          console.log('[tryStart] Starting simulation');
           runNext(); 
         } else { 
           setTimeout(tryStart, 200); 
