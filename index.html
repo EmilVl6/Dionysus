@@ -529,10 +529,8 @@
 
       function tryStart(){
         if(window.pixelGrid && window.pixelGrid.GRID){ 
-          console.log('Starting simulation');
           runNext(); 
         } else { 
-          console.log('Waiting for pixelGrid');
           setTimeout(tryStart, 200); 
         }
       }
