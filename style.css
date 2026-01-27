@@ -115,7 +115,7 @@ body {
     font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.5;
     color: var(--text);
-    background: var(--bg);
+    background: transparent;
     min-height: 100vh;
     -webkit-perspective: 500px;
     perspective: 500px;
@@ -184,7 +184,7 @@ select { padding: 0.45rem 0.6rem; border-radius: 8px; border: 1px solid var(--mu
 .sr-only { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
 
 
-.body, body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; }
+.body, body { background: transparent; color: var(--text); font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; }
 
 
 .center { position: relative; height: 100vh; display: flex; align-items: center; justify-content: center; box-sizing: border-box; overflow: hidden; }
