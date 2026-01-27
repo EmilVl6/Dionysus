@@ -68,13 +68,11 @@
       let idx = 0;
       const btn = document.getElementById('color-btn');
       const root = document.documentElement;
-      window.onColorChange = null;
       function setBg(i){
         idx = i;
         root.style.setProperty('--bg', colors[idx]);
         btn.style.background = colors[(idx+1)%colors.length];
         btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-        if(window.onColorChange) window.onColorChange(colors[idx]);
       }
       btn.addEventListener('click', function(){
         setBg((idx+1)%colors.length);
@@ -327,7 +325,7 @@
           
           const scaleX = vw / gridWidth;
           const scaleY = vh / gridHeight;
-          const scale = Math.min(scaleX, scaleY);
+          const scale = Math.max(scaleX, scaleY) * 1.1;
           
           container.style.transform = `scale(${scale})`;
           container.style.transformOrigin = 'center center';
@@ -414,26 +412,10 @@
       const api = { pixelGrid: window.pixelGrid, root: document.documentElement };
       let idx = 0;
       let currentStop = null;
-      let currentFrameData = null;
       const runFor = 6000;
       let useBaked = true;
-      let nextBakedData = null;
-
-      async function preloadNext(){
-        const nextIdx = idx % bakedFiles.length;
-        const nextFile = bakedFiles[nextIdx];
-        if(useBaked){
-          try{
-            const response = await fetch(nextFile);
-            if(response.ok){
-              nextBakedData = await response.json();
-            }
-          }catch(e){}
-        }
-      }
 
       async function runNext(){
-        console.log('[runNext] Starting, pixelGrid:', !!window.pixelGrid);
         if(!window.pixelGrid) return;
         
         if(currentStop) { 
@@ -443,23 +425,15 @@
         
         const bakedFile = bakedFiles[idx % bakedFiles.length];
         const liveFile = liveFiles[idx % liveFiles.length];
-        console.log('[runNext] Loading:', bakedFile);
         idx++;
         
         if(useBaked) {
           try{
-            let data = nextBakedData;
-            if(!data){
-              console.log('[runNext] Fetching:', bakedFile);
-              const response = await fetch(bakedFile);
-              if(!response.ok) throw new Error('Baked file not found');
-              data = await response.json();
-            }
-            nextBakedData = null;
-            preloadNext();
+            const response = await fetch(bakedFile);
+            if(!response.ok) throw new Error('Baked file not found');
+            const data = await response.json();
             
             if(data && data.frames){
-              console.log('[runNext] Playing baked with', data.frames.length, 'frames');
               window.pixelGrid.clear();
               currentStop = playBaked(data, api);
             }
@@ -495,32 +469,17 @@
         const { pixelGrid } = api;
         let frame = 0;
         let running = true;
-        let currentColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
-        console.log('[playBaked] Starting with color:', currentColor);
-        
-        window.onColorChange = function(newColor) {
-          currentColor = newColor;
-          if(running && currentFrameData){
-            for (const [key, color] of Object.entries(currentFrameData)) {
-              const [x, y] = key.split(',').map(Number);
-              pixelGrid.setPixel(x, y, currentColor);
-            }
-          }
-        };
 
         function render() {
           if (!running) return;
           
-          currentFrameData = data.frames[frame % data.frames.length];
+          const frameData = data.frames[frame % data.frames.length];
           pixelGrid.clear();
           
-          let pixelCount = 0;
-          for (const [key, color] of Object.entries(currentFrameData)) {
+          for (const [key, color] of Object.entries(frameData)) {
             const [x, y] = key.split(',').map(Number);
-            pixelGrid.setPixel(x, y, currentColor);
-            pixelCount++;
+            pixelGrid.setPixel(x, y, color);
           }
-          if(frame === 0) console.log('[playBaked] First frame rendered', pixelCount, 'pixels');
           
           frame++;
           setTimeout(() => {
@@ -529,16 +488,11 @@
         }
 
         requestAnimationFrame(render);
-        return () => { 
-          running = false;
-          window.onColorChange = null;
-        };
+        return () => { running = false; };
       }
 
       function tryStart(){
-        console.log('[tryStart] pixelGrid:', !!window.pixelGrid, 'GRID:', !!(window.pixelGrid && window.pixelGrid.GRID));
         if(window.pixelGrid && window.pixelGrid.GRID){ 
-          console.log('[tryStart] Starting simulation');
           runNext(); 
         } else { 
           setTimeout(tryStart, 200); 
