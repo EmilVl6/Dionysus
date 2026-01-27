@@ -490,11 +490,9 @@
                 const match = hslColor.match(/hsl\(0, 0%, (\d+)%\)/);
                 if(match) {
                   const lightness = parseInt(match[1]);
-                  if(lightness < 95) {
-                    const alpha = (100 - lightness) / 100 * 0.6;
-                    const [x, y] = key.split(',').map(Number);
-                    pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
-                  }
+                  const alpha = (100 - lightness) / 100;
+                  const [x, y] = key.split(',').map(Number);
+                  pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
                 }
               }
             }
@@ -514,11 +512,9 @@
               const match = hslColor.match(/hsl\(0, 0%, (\d+)%\)/);
               if(match) {
                 const lightness = parseInt(match[1]);
-                if(lightness < 95) {
-                  const alpha = (100 - lightness) / 100 * 0.6;
-                  const [x, y] = key.split(',').map(Number);
-                  pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
-                }
+                const alpha = (100 - lightness) / 100;
+                const [x, y] = key.split(',').map(Number);
+                pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
               }
             }
           }
