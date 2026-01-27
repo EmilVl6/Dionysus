@@ -327,7 +327,7 @@
           
           const scaleX = vw / gridWidth;
           const scaleY = vh / gridHeight;
-          const scale = Math.max(scaleX, scaleY) * 1.1;
+          const scale = Math.min(scaleX, scaleY);
           
           container.style.transform = `scale(${scale})`;
           container.style.transformOrigin = 'center center';
