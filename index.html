@@ -411,62 +411,79 @@
       
       const api = { pixelGrid: window.pixelGrid, root: document.documentElement };
       let idx = 0;
-      let currentStop = null;
+      let currentRenderer = null;
       const runFor = 6000;
       let useBaked = true;
+      let simulationQueue = [];
+      let isPreloading = false;
+
+      async function preloadNext(){
+        if(isPreloading) return;
+        isPreloading = true;
+        
+        const nextIdx = (idx + 1) % bakedFiles.length;
+        const bakedFile = bakedFiles[nextIdx];
+        
+        try{
+          const response = await fetch(bakedFile);
+          if(response.ok){
+            const data = await response.json();
+            if(data && data.frames){
+              data.frames = data.frames.slice(0, 60);
+              simulationQueue.push(data);
+            }
+          }
+        }catch(e){
+          console.warn('Preload failed', e);
+        }
+        
+        isPreloading = false;
+      }
 
       async function runNext(){
         if(!window.pixelGrid) return;
         
-        if(currentStop) { 
-          try{ currentStop(); }catch(e){} 
-          currentStop = null; 
-        }
-        
         const bakedFile = bakedFiles[idx % bakedFiles.length];
-        const liveFile = liveFiles[idx % liveFiles.length];
         idx++;
         
         if(useBaked) {
-          try{
-            const response = await fetch(bakedFile);
-            if(!response.ok) throw new Error('Baked file not found');
-            const data = await response.json();
-            
-            if(data && data.frames){
-              currentStop = playBaked(data, api);
-            }
-          }catch(e){ 
-            console.log('Baked files not ready, using live simulation');
-            useBaked = false;
+          let data;
+          if(simulationQueue.length > 0){
+            data = simulationQueue.shift();
+          } else {
             try{
-              const mod = await import(liveFile);
-              if(mod && typeof mod.default === 'function'){
-                currentStop = mod.default(api) || null;
+              const response = await fetch(bakedFile);
+              if(!response.ok) throw new Error('Baked file not found');
+              data = await response.json();
+              if(data && data.frames){
+                data.frames = data.frames.slice(0, 60);
               }
-            }catch(e2){
-              console.warn('Failed to load simulation', e2);
+            }catch(e){ 
+              console.log('Baked files not ready, using live simulation');
+              useBaked = false;
             }
           }
-        } else {
-          try{
-            const mod = await import(liveFile);
-            if(mod && typeof mod.default === 'function'){
-              currentStop = mod.default(api) || null;
-            }
-          }catch(e){
-            console.warn('Failed to load simulation', e);
+          
+          if(data && data.frames){
+            currentRenderer = playBaked(data, api, currentRenderer);
+            preloadNext();
           }
         }
         
         setTimeout(runNext, runFor);
       }
 
-      function playBaked(data, api) {
+      function playBaked(data, api, previousRenderer) {
         const { pixelGrid } = api;
         let frame = 0;
         let running = true;
+        let fadeIn = 0;
+        let fadeOut = 1;
         let currentColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+        
+        if(previousRenderer) {
+          previousRenderer.fadeOut = true;
+        }
         
         const hexToRgb = (hex) => {
           const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -490,64 +507,68 @@
           return 50;
         };
         
+        const pixelCache = new Map();
+        
         window.onColorChange = function(newColor) {
           currentColor = newColor;
-          if(running && currentFrameData){
-            const rgb = hexToRgb(currentColor);
-            if(rgb) {
-              pixelGrid.clear();
-              for (const [key, bakedColor] of Object.entries(currentFrameData)) {
-                const lightness = getLightness(bakedColor);
-                const [x, y] = key.split(',').map(Number);
-                
-                if(lightness > 50) {
-                  const alpha = Math.pow((lightness - 50) / 50, 0.6);
-                  pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
-                } else {
-                  const darkness = 50 - lightness;
-                  const alpha = Math.pow(darkness / 50, 0.5);
-                  pixelGrid.setPixel(x, y, `rgba(0, 0, 0, ${alpha})`);
-                }
-              }
-            }
-          }
+          pixelCache.clear();
         };
 
         let currentFrameData;
-        function render() {
-          if (!running) return;
-          
-          currentFrameData = data.frames[frame % data.frames.length];
-          pixelGrid.clear();
-          
-          const rgb = hexToRgb(currentColor);
-          if(rgb) {
-            for (const [key, bakedColor] of Object.entries(currentFrameData)) {
-              const lightness = getLightness(bakedColor);
-              const [x, y] = key.split(',').map(Number);
-              
-              if(lightness > 50) {
-                const alpha = Math.pow((lightness - 50) / 50, 0.6);
-                pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
-              } else {
-                const darkness = 50 - lightness;
-                const alpha = Math.pow(darkness / 50, 0.5);
-                pixelGrid.setPixel(x, y, `rgba(0, 0, 0, ${alpha})`);
+        const renderer = {
+          fadeOut: false,
+          render: function() {
+            if (!running) return;
+            
+            if(renderer.fadeOut) {
+              fadeOut = Math.max(0, fadeOut - 0.1);
+              if(fadeOut === 0) {
+                running = false;
+                return;
+              }
+            } else if(fadeIn < 1) {
+              fadeIn = Math.min(1, fadeIn + 0.15);
+            }
+            
+            currentFrameData = data.frames[frame % data.frames.length];
+            
+            const rgb = hexToRgb(currentColor);
+            if(rgb) {
+              for (const [key, bakedColor] of Object.entries(currentFrameData)) {
+                let cachedPixel = pixelCache.get(key);
+                if(!cachedPixel) {
+                  const lightness = getLightness(bakedColor);
+                  const [x, y] = key.split(',').map(Number);
+                  
+                  if(lightness > 50) {
+                    const baseAlpha = Math.pow((lightness - 50) / 50, 0.6);
+                    cachedPixel = { x, y, isHighlight: true, baseAlpha };
+                  } else {
+                    const darkness = 50 - lightness;
+                    const baseAlpha = Math.pow(darkness / 50, 0.5);
+                    cachedPixel = { x, y, isHighlight: false, baseAlpha };
+                  }
+                  pixelCache.set(key, cachedPixel);
+                }
+                
+                const finalAlpha = cachedPixel.baseAlpha * fadeIn * fadeOut;
+                if(cachedPixel.isHighlight) {
+                  pixelGrid.setPixel(cachedPixel.x, cachedPixel.y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${finalAlpha})`);
+                } else {
+                  pixelGrid.setPixel(cachedPixel.x, cachedPixel.y, `rgba(0, 0, 0, ${finalAlpha})`);
+                }
               }
             }
+            
+            frame++;
+            setTimeout(() => {
+              if (running) requestAnimationFrame(renderer.render);
+            }, 50);
           }
-          
-          frame++;
-          setTimeout(() => {
-            if (running) requestAnimationFrame(render);
-          }, 50);
-        }
-
-        requestAnimationFrame(render);
-        return () => { 
-          running = false;
-          window.onColorChange = null;
         };
+
+        requestAnimationFrame(renderer.render);
+        return renderer;
       }
 
       function tryStart(){
