@@ -434,7 +434,6 @@
             const data = await response.json();
             
             if(data && data.frames){
-              window.pixelGrid.clear();
               currentStop = playBaked(data, api);
             }
           }catch(e){ 
@@ -443,7 +442,6 @@
             try{
               const mod = await import(liveFile);
               if(mod && typeof mod.default === 'function'){
-                window.pixelGrid.clear();
                 currentStop = mod.default(api) || null;
               }
             }catch(e2){
@@ -454,7 +452,6 @@
           try{
             const mod = await import(liveFile);
             if(mod && typeof mod.default === 'function'){
-              window.pixelGrid.clear();
               currentStop = mod.default(api) || null;
             }
           }catch(e){
@@ -496,13 +493,15 @@
         window.onColorChange = function(newColor) {
           currentColor = newColor;
           if(running && currentFrameData){
-            pixelGrid.clear();
-            for (const [key, bakedColor] of Object.entries(currentFrameData)) {
-              const lightness = getLightness(bakedColor);
-              const darkness = 100 - lightness;
-              const alpha = Math.pow(darkness / 100, 0.5);
-              const [x, y] = key.split(',').map(Number);
-              pixelGrid.setPixel(x, y, `rgba(0, 0, 0, ${alpha})`);
+            const rgb = hexToRgb(currentColor);
+            if(rgb) {
+              pixelGrid.clear();
+              for (const [key, bakedColor] of Object.entries(currentFrameData)) {
+                const lightness = getLightness(bakedColor);
+                const alpha = Math.pow(lightness / 100, 0.7);
+                const [x, y] = key.split(',').map(Number);
+                pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
+              }
             }
           }
         };
@@ -514,12 +513,14 @@
           currentFrameData = data.frames[frame % data.frames.length];
           pixelGrid.clear();
           
-          for (const [key, bakedColor] of Object.entries(currentFrameData)) {
-            const lightness = getLightness(bakedColor);
-            const darkness = 100 - lightness;
-            const alpha = Math.pow(darkness / 100, 0.5);
-            const [x, y] = key.split(',').map(Number);
-            pixelGrid.setPixel(x, y, `rgba(0, 0, 0, ${alpha})`);
+          const rgb = hexToRgb(currentColor);
+          if(rgb) {
+            for (const [key, bakedColor] of Object.entries(currentFrameData)) {
+              const lightness = getLightness(bakedColor);
+              const alpha = Math.pow(lightness / 100, 0.7);
+              const [x, y] = key.split(',').map(Number);
+              pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
+            }
           }
           
           frame++;
