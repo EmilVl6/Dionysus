@@ -37,18 +37,18 @@ class GridCapture {
 global.document = {
   documentElement: {
     style: { getPropertyValue: (prop) => {
-      if (prop === '--bg') return 'hsl(0, 0%, 50%)';
-      return '#808080';
+      if (prop === '--bg') return '#333333';
+      return '#333333';
     }}
   }
 };
 
-global.getComputedStyle = () => ({
+global.getComputedStyle = (element) => ({
   getPropertyValue: (prop) => {
-    if (prop === '--bg') return 'hsl(0, 0%, 50%)';
-    return '#808080';
+    if (prop === '--bg') return '#333333';
+    return '#333333';
   },
-  background: 'hsl(0, 0%, 50%)'
+  background: '#333333'
 });
 
 global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
