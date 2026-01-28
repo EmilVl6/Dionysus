@@ -498,9 +498,16 @@
               pixelGrid.clear();
               for (const [key, bakedColor] of Object.entries(currentFrameData)) {
                 const lightness = getLightness(bakedColor);
-                const alpha = Math.pow(lightness / 100, 0.7);
                 const [x, y] = key.split(',').map(Number);
-                pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
+                
+                if(lightness > 50) {
+                  const alpha = Math.pow((lightness - 50) / 50, 0.6);
+                  pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
+                } else {
+                  const darkness = 50 - lightness;
+                  const alpha = Math.pow(darkness / 50, 0.5);
+                  pixelGrid.setPixel(x, y, `rgba(0, 0, 0, ${alpha})`);
+                }
               }
             }
           }
@@ -517,9 +524,16 @@
           if(rgb) {
             for (const [key, bakedColor] of Object.entries(currentFrameData)) {
               const lightness = getLightness(bakedColor);
-              const alpha = Math.pow(lightness / 100, 0.7);
               const [x, y] = key.split(',').map(Number);
-              pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
+              
+              if(lightness > 50) {
+                const alpha = Math.pow((lightness - 50) / 50, 0.6);
+                pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
+              } else {
+                const darkness = 50 - lightness;
+                const alpha = Math.pow(darkness / 50, 0.5);
+                pixelGrid.setPixel(x, y, `rgba(0, 0, 0, ${alpha})`);
+              }
             }
           }
           
