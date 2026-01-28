@@ -49,7 +49,7 @@ class GridCapture {
     const compressed = {};
     for(const [key, color] of Object.entries(this.current)) {
       const lightness = this.extractLightness(color);
-      if(lightness < 38 || lightness > 62) {
+      if(lightness < 85) {
         compressed[key] = lightness;
       }
     }
