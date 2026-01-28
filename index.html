@@ -481,7 +481,7 @@
         };
         
         const getLightness = (color) => {
-          const hslMatch = color.match(/hsl\(0, 0%, (\d+)%\)/);
+          const hslMatch = color.match(/hsl\(\d+,\s*\d+%,\s*(\d+)%\)/);
           if(hslMatch) return parseInt(hslMatch[1]);
           
           const rgb = hexToRgb(color);
