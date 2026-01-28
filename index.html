@@ -501,7 +501,8 @@
               pixelGrid.clear();
               for (const [key, bakedColor] of Object.entries(currentFrameData)) {
                 const lightness = getLightness(bakedColor);
-                const alpha = (100 - lightness) / 100;
+                const darkness = 100 - lightness;
+                const alpha = darkness / 100;
                 const [x, y] = key.split(',').map(Number);
                 pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
               }
@@ -520,7 +521,8 @@
           if(rgb) {
             for (const [key, bakedColor] of Object.entries(currentFrameData)) {
               const lightness = getLightness(bakedColor);
-              const alpha = (100 - lightness) / 100;
+              const darkness = 100 - lightness;
+              const alpha = darkness / 100;
               const [x, y] = key.split(',').map(Number);
               pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
             }
