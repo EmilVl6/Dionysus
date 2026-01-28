@@ -36,13 +36,19 @@ class GridCapture {
 
 global.document = {
   documentElement: {
-    style: { getPropertyValue: () => '#000000' }
+    style: { getPropertyValue: (prop) => {
+      if (prop === '--bg') return 'hsl(0, 0%, 50%)';
+      return '#808080';
+    }}
   }
 };
 
 global.getComputedStyle = () => ({
-  getPropertyValue: () => '#000000',
-  background: '#00000000'
+  getPropertyValue: (prop) => {
+    if (prop === '--bg') return 'hsl(0, 0%, 50%)';
+    return '#808080';
+  },
+  background: 'hsl(0, 0%, 50%)'
 });
 
 global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
@@ -54,7 +60,14 @@ async function bakeSimulation(name, modulePath) {
   const grid = new GridCapture();
   const api = {
     pixelGrid: grid,
-    root: { style: { getPropertyValue: () => '#000000' } }
+    root: { 
+      style: { 
+        getPropertyValue: (prop) => {
+          if (prop === '--bg') return 'hsl(0, 0%, 50%)';
+          return '#808080';
+        }
+      } 
+    }
   };
 
   try {
