@@ -496,16 +496,13 @@
         window.onColorChange = function(newColor) {
           currentColor = newColor;
           if(running && currentFrameData){
-            const rgb = hexToRgb(currentColor);
-            if(rgb) {
-              pixelGrid.clear();
-              for (const [key, bakedColor] of Object.entries(currentFrameData)) {
-                const lightness = getLightness(bakedColor);
-                const darkness = 100 - lightness;
-                const alpha = darkness / 100;
-                const [x, y] = key.split(',').map(Number);
-                pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
-              }
+            pixelGrid.clear();
+            for (const [key, bakedColor] of Object.entries(currentFrameData)) {
+              const lightness = getLightness(bakedColor);
+              const darkness = 100 - lightness;
+              const alpha = Math.pow(darkness / 100, 0.5);
+              const [x, y] = key.split(',').map(Number);
+              pixelGrid.setPixel(x, y, `rgba(0, 0, 0, ${alpha})`);
             }
           }
         };
@@ -517,15 +514,12 @@
           currentFrameData = data.frames[frame % data.frames.length];
           pixelGrid.clear();
           
-          const rgb = hexToRgb(currentColor);
-          if(rgb) {
-            for (const [key, bakedColor] of Object.entries(currentFrameData)) {
-              const lightness = getLightness(bakedColor);
-              const darkness = 100 - lightness;
-              const alpha = darkness / 100;
-              const [x, y] = key.split(',').map(Number);
-              pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
-            }
+          for (const [key, bakedColor] of Object.entries(currentFrameData)) {
+            const lightness = getLightness(bakedColor);
+            const darkness = 100 - lightness;
+            const alpha = Math.pow(darkness / 100, 0.5);
+            const [x, y] = key.split(',').map(Number);
+            pixelGrid.setPixel(x, y, `rgba(0, 0, 0, ${alpha})`);
           }
           
           frame++;
