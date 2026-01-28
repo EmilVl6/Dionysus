@@ -59,7 +59,7 @@
       </div>
       <div class="screen"></div>
     </div>
-      <div class="portrait" aria-hidden="true"><img src="Me.png" alt="" /></div>
+      <div class="portrait" aria-hidden="true"><img src="Me-optimized-small.png" alt="" loading="lazy" /></div>
       <div class="center-inner">
       <div class="pencil-intro">Hi I'm</div>
       </div>
@@ -135,6 +135,8 @@
             shuffleQueue();
             queueIndex = 0;
           }
+          // Fallback: if still empty, return a default phrase to avoid errors
+          if(phraseQueue.length === 0) return "Welcome";
           return phraseQueue[queueIndex++];
         }
 
@@ -148,6 +150,7 @@
         function typeWord(word){
           clearTimers();
           const banner = document.querySelector('.banner');
+          if (!word || typeof word !== 'string' || !word.length) return; // Prevent error on empty word
           banner.dataset.lockAngle = '0';
           banner.style.animation = 'none';
           banner.style.transform = 'rotateY(0deg)';
