@@ -478,6 +478,8 @@
         };
         
         const getLightness = (color) => {
+          if(typeof color === 'number') return color;
+          
           const hslMatch = color.match(/hsl\(\d+,\s*\d+%,\s*(\d+)%\)/);
           if(hslMatch) return parseInt(hslMatch[1]);
           

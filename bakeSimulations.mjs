@@ -15,6 +15,22 @@ class GridCapture {
     this.current = {};
   }
 
+  extractLightness(color) {
+    const hslMatch = color.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+    if(hslMatch) return parseInt(hslMatch[3]);
+    
+    const hex = color.replace('#', '');
+    if(hex.length === 6) {
+      const r = parseInt(hex.slice(0,2), 16) / 255;
+      const g = parseInt(hex.slice(2,4), 16) / 255;
+      const b = parseInt(hex.slice(4,6), 16) / 255;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      return Math.round(((max + min) / 2) * 100);
+    }
+    return 50;
+  }
+
   setPixel(x, y, color) {
     if (x >= 0 && y >= 0 && x < COLS && y < ROWS) {
       this.current[`${x},${y}`] = color;
@@ -30,7 +46,14 @@ class GridCapture {
   }
 
   snapshot() {
-    this.frames.push({ ...this.current });
+    const compressed = {};
+    for(const [key, color] of Object.entries(this.current)) {
+      const lightness = this.extractLightness(color);
+      if(lightness < 85) {
+        compressed[key] = lightness;
+      }
+    }
+    this.frames.push(compressed);
   }
 }
 
