@@ -469,16 +469,61 @@
         const { pixelGrid } = api;
         let frame = 0;
         let running = true;
+        let currentColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+        
+        const hexToRgb = (hex) => {
+          const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+          return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+          } : null;
+        };
+        
+        const getLightness = (color) => {
+          const hslMatch = color.match(/hsl\(0, 0%, (\d+)%\)/);
+          if(hslMatch) return parseInt(hslMatch[1]);
+          
+          const rgb = hexToRgb(color);
+          if(rgb) {
+            const max = Math.max(rgb.r, rgb.g, rgb.b);
+            const min = Math.min(rgb.r, rgb.g, rgb.b);
+            return ((max + min) / 2 / 255) * 100;
+          }
+          return 50;
+        };
+        
+        window.onColorChange = function(newColor) {
+          currentColor = newColor;
+          if(running && currentFrameData){
+            const rgb = hexToRgb(currentColor);
+            if(rgb) {
+              pixelGrid.clear();
+              for (const [key, bakedColor] of Object.entries(currentFrameData)) {
+                const lightness = getLightness(bakedColor);
+                const alpha = (100 - lightness) / 100;
+                const [x, y] = key.split(',').map(Number);
+                pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
+              }
+            }
+          }
+        };
 
+        let currentFrameData;
         function render() {
           if (!running) return;
           
-          const frameData = data.frames[frame % data.frames.length];
+          currentFrameData = data.frames[frame % data.frames.length];
           pixelGrid.clear();
           
-          for (const [key, color] of Object.entries(frameData)) {
-            const [x, y] = key.split(',').map(Number);
-            pixelGrid.setPixel(x, y, color);
+          const rgb = hexToRgb(currentColor);
+          if(rgb) {
+            for (const [key, bakedColor] of Object.entries(currentFrameData)) {
+              const lightness = getLightness(bakedColor);
+              const alpha = (100 - lightness) / 100;
+              const [x, y] = key.split(',').map(Number);
+              pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
+            }
           }
           
           frame++;
@@ -488,7 +533,10 @@
         }
 
         requestAnimationFrame(render);
-        return () => { running = false; };
+        return () => { 
+          running = false;
+          window.onColorChange = null;
+        };
       }
 
       function tryStart(){
