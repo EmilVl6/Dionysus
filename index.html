@@ -7,16 +7,24 @@
   <meta name="description" content="Developer ≷ Drummer | If you don’t know who I am, then maybe your best course would be to Tread Lightly" />
   <title>Emil Vinod</title>
   <link rel="icon" href="favicon.ico">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Only load main style.css up front -->
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
-  <script src="phraseology.js"></script>
+  <!-- Defer fonts and extra styles -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;600&display=swap" as="style" onload="this.rel='stylesheet'">
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" as="style" onload="this.rel='stylesheet'">
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" as="style" onload="this.rel='stylesheet'">
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" as="style" onload="this.rel='stylesheet'">
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
+  </noscript>
+  <!-- Defer non-critical JS -->
+  <script src="phraseology.js" defer></script>
 </head>
 
 <body>
-  <div class="pixel-grid" aria-hidden="true"></div>
   <div id="page-wrap">
     <button id="color-btn" title="" aria-label="">
       <img src="favicon.png" alt="icon" class="color-btn-icon" />
@@ -60,6 +68,7 @@
       <p class="subtitle">Developer ≷ Drummer</p>
     </main>
   </div>
+  <canvas id="sim-canvas" width="640" height="640" style="display:block;position:absolute;top:0;left:0;z-index:0;"></canvas>
   <script>
     (function(){
       const colors = [
@@ -525,24 +534,7 @@
           }
 
           currentFrameData = data.frames[frame % data.frames.length];
-          pixelGrid.clear();
-          
-          const rgb = hexToRgb(currentColor);
-          if(rgb) {
-            for (const [key, bakedColor] of Object.entries(currentFrameData)) {
-              const lightness = getLightness(bakedColor);
-              const [x, y] = key.split(',').map(Number);
-              
-              if(lightness > 50) {
-                const alpha = Math.pow((lightness - 50) / 50, 0.6);
-                pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
-              } else {
-                const darkness = 50 - lightness;
-                const alpha = Math.pow(darkness / 50, 0.5);
-                pixelGrid.setPixel(x, y, `rgba(0, 0, 0, ${alpha})`);
-              }
-            }
-          }
+          worker.postMessage({ frameData: currentFrameData, color: hexToRgb(currentColor), cols, rows });
           frame++;
           setTimeout(() => {
             if (running) requestAnimationFrame(render);
