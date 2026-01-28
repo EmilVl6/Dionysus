@@ -4,9 +4,9 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const COLS = 64;
-const ROWS = 64;
-const FRAMES = 40;
+const COLS = 80;
+const ROWS = 80;
+const FRAMES = 120;
 
 class GridCapture {
   constructor() {
@@ -49,7 +49,7 @@ class GridCapture {
     const compressed = {};
     for(const [key, color] of Object.entries(this.current)) {
       const lightness = this.extractLightness(color);
-      if(lightness < 95) {
+      if(lightness < 85) {
         compressed[key] = lightness;
       }
     }
