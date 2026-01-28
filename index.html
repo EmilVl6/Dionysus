@@ -418,10 +418,10 @@
       let isPreloading = false;
 
       async function preloadNext(){
-        if(isPreloading) return;
+        if(isPreloading || simulationQueue.length > 0) return;
         isPreloading = true;
         
-        const nextIdx = (idx + 1) % bakedFiles.length;
+        const nextIdx = idx % bakedFiles.length;
         const bakedFile = bakedFiles[nextIdx];
         
         try{
@@ -429,7 +429,7 @@
           if(response.ok){
             const data = await response.json();
             if(data && data.frames){
-              data.frames = data.frames.slice(0, 60);
+              data.frames = data.frames.slice(0, 80);
               simulationQueue.push(data);
             }
           }
@@ -443,29 +443,29 @@
       async function runNext(){
         if(!window.pixelGrid) return;
         
-        const bakedFile = bakedFiles[idx % bakedFiles.length];
-        idx++;
-        
         if(useBaked) {
           let data;
           if(simulationQueue.length > 0){
             data = simulationQueue.shift();
           } else {
+            const bakedFile = bakedFiles[idx % bakedFiles.length];
             try{
               const response = await fetch(bakedFile);
               if(!response.ok) throw new Error('Baked file not found');
               data = await response.json();
               if(data && data.frames){
-                data.frames = data.frames.slice(0, 60);
+                data.frames = data.frames.slice(0, 80);
               }
             }catch(e){ 
-              console.log('Baked files not ready, using live simulation');
+              console.log('Baked files not ready');
               useBaked = false;
+              return;
             }
           }
           
           if(data && data.frames){
             currentRenderer = playBaked(data, api, currentRenderer);
+            idx++;
             preloadNext();
           }
         }
@@ -481,7 +481,7 @@
         let fadeOut = 1;
         let currentColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
         
-        if(previousRenderer) {
+        if(previousRenderer && previousRenderer.running) {
           previousRenderer.fadeOut = true;
         }
         
@@ -508,31 +508,39 @@
         };
         
         const pixelCache = new Map();
+        const rgbCache = {};
         
         window.onColorChange = function(newColor) {
           currentColor = newColor;
-          pixelCache.clear();
         };
 
         let currentFrameData;
         const renderer = {
           fadeOut: false,
+          running: true,
           render: function() {
-            if (!running) return;
+            if (!running || !renderer.running) return;
             
             if(renderer.fadeOut) {
-              fadeOut = Math.max(0, fadeOut - 0.1);
+              fadeOut = Math.max(0, fadeOut - 0.05);
               if(fadeOut === 0) {
                 running = false;
+                renderer.running = false;
+                pixelCache.clear();
                 return;
               }
             } else if(fadeIn < 1) {
-              fadeIn = Math.min(1, fadeIn + 0.15);
+              fadeIn = Math.min(1, fadeIn + 0.08);
             }
             
             currentFrameData = data.frames[frame % data.frames.length];
             
-            const rgb = hexToRgb(currentColor);
+            let rgb = rgbCache[currentColor];
+            if(!rgb) {
+              rgb = hexToRgb(currentColor);
+              rgbCache[currentColor] = rgb;
+            }
+            
             if(rgb) {
               for (const [key, bakedColor] of Object.entries(currentFrameData)) {
                 let cachedPixel = pixelCache.get(key);
@@ -552,10 +560,12 @@
                 }
                 
                 const finalAlpha = cachedPixel.baseAlpha * fadeIn * fadeOut;
-                if(cachedPixel.isHighlight) {
-                  pixelGrid.setPixel(cachedPixel.x, cachedPixel.y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${finalAlpha})`);
-                } else {
-                  pixelGrid.setPixel(cachedPixel.x, cachedPixel.y, `rgba(0, 0, 0, ${finalAlpha})`);
+                if(finalAlpha > 0.01) {
+                  if(cachedPixel.isHighlight) {
+                    pixelGrid.setPixel(cachedPixel.x, cachedPixel.y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${finalAlpha})`);
+                  } else {
+                    pixelGrid.setPixel(cachedPixel.x, cachedPixel.y, `rgba(0, 0, 0, ${finalAlpha})`);
+                  }
                 }
               }
             }
