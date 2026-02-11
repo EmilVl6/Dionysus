@@ -59,7 +59,7 @@
       </div>
       <div class="screen"></div>
     </div>
-      <canvas id="sim-canvas" width="25" height="25" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:-1;pointer-events:none;image-rendering:pixelated;"></canvas>
+      <canvas id="sim-canvas" width="80" height="80" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:640px;height:640px;z-index:-1;pointer-events:none;image-rendering:pixelated;"></canvas>
       <div class="portrait" aria-hidden="true"><img src="Me-optimized-small.png" alt="" loading="lazy" /></div>
       <div class="center-inner">
       <div class="pencil-intro">Hi I'm</div>
@@ -438,8 +438,8 @@
       // Canvas and worker setup for baked simulations
       const canvas = document.getElementById('sim-canvas');
       const ctx = canvas ? canvas.getContext('2d') : null;
-      const cols = 25;
-      const rows = 25;
+      const cols = 80;
+      const rows = 80;
       let worker = null;
       
       if (canvas && ctx) {
@@ -459,7 +459,7 @@
           function scaleCanvas() {
             const vw = window.innerWidth;
             const vh = window.innerHeight;
-            const gridSize = 1000;
+            const gridSize = 640;
             const scaleX = vw / gridSize;
             const scaleY = vh / gridSize;
             const scale = Math.max(scaleX, scaleY) * 1.1;
