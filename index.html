@@ -392,7 +392,16 @@
         GRID
       };
 
-      buildFixedGrid();
+      // Only build pixel grid if canvas is not available (fallback for live sims)
+      const canvasEl = document.getElementById('sim-canvas');
+      if (!canvasEl) {
+        buildFixedGrid();
+      } else {
+        // Set up minimal GRID for compatibility
+        GRID.container = container;
+        GRID.cols = FIXED_COLS;
+        GRID.rows = FIXED_ROWS;
+      }
       scaleGrid();
       
       let resizeTimeout;
@@ -435,14 +444,24 @@
       const ctx = canvas ? canvas.getContext('2d') : null;
       const cols = 25;
       const rows = 25;
-      const worker = new Worker('simWorker.js');
+      let worker = null;
       
-      if (ctx && worker) {
-        worker.onmessage = function(e) {
-          const imageData = ctx.createImageData(cols, rows);
-          imageData.data.set(e.data.pixels || e.data);
-          ctx.putImageData(imageData, 0, 0);
-        };
+      if (canvas && ctx) {
+        try {
+          worker = new Worker('simWorker.js');
+          worker.onerror = function(err) {
+            console.error('Worker error:', err);
+            worker = null;
+          };
+          worker.onmessage = function(e) {
+            const imageData = ctx.createImageData(cols, rows);
+            imageData.data.set(e.data.pixels || e.data);
+            ctx.putImageData(imageData, 0, 0);
+          };
+        } catch(e) {
+          console.error('Failed to create worker:', e);
+          worker = null;
+        }
       }
 
       async function runNext(){
@@ -457,7 +476,7 @@
         const liveFile = liveFiles[idx % liveFiles.length];
         idx++;
         
-        if(useBaked) {
+        if(useBaked && canvas && ctx && worker) {
           try{
             const response = await fetch(bakedFile);
             if(!response.ok) throw new Error('Baked file not found');
@@ -467,7 +486,7 @@
               currentStop = playBaked(data, api);
             }
           }catch(e){ 
-            console.log('Baked files not ready, using live simulation');
+            console.log('Baked files not ready, using live simulation:', e);
             useBaked = false;
             try{
               const mod = await import(liveFile);
