@@ -20,8 +20,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
   </noscript>
-  <!-- Defer non-critical JS -->
-  <script src="phraseology.js" defer></script>
+  <!-- Load phraseology before inline scripts that depend on it -->
+  <script src="phraseology.js"></script>
 </head>
 
 <body>
@@ -68,7 +68,7 @@
       <p class="subtitle">Developer ≷ Drummer</p>
     </main>
   </div>
-  <canvas id="sim-canvas" width="640" height="640" style="display:block;position:absolute;top:0;left:0;z-index:0;"></canvas>
+  <canvas id="sim-canvas" width="25" height="25" style="display:block;position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;image-rendering:pixelated;"></canvas>
   <script>
     (function(){
       const colors = [
@@ -427,6 +427,21 @@
       const runFor = 6000;
       let useBaked = true;
 
+      // Canvas and worker setup for baked simulations
+      const canvas = document.getElementById('sim-canvas');
+      const ctx = canvas ? canvas.getContext('2d') : null;
+      const cols = 25;
+      const rows = 25;
+      const worker = new Worker('simWorker.js');
+      
+      if (ctx && worker) {
+        worker.onmessage = function(e) {
+          const imageData = ctx.createImageData(cols, rows);
+          imageData.data.set(e.data.pixels || e.data);
+          ctx.putImageData(imageData, 0, 0);
+        };
+      }
+
       async function runNext(){
         if(!window.pixelGrid) return;
         
@@ -475,7 +490,6 @@
       }
 
       function playBaked(data, api) {
-        const { pixelGrid } = api;
         let frame = 0;
         let running = true;
         let currentColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
@@ -506,23 +520,10 @@
         
         window.onColorChange = function(newColor) {
           currentColor = newColor;
-          if(running && currentFrameData){
+          if(running && currentFrameData && worker){
             const rgb = hexToRgb(currentColor);
             if(rgb) {
-              pixelGrid.clear();
-              for (const [key, bakedColor] of Object.entries(currentFrameData)) {
-                const lightness = getLightness(bakedColor);
-                const [x, y] = key.split(',').map(Number);
-                
-                if(lightness > 50) {
-                  const alpha = Math.pow((lightness - 50) / 50, 0.6);
-                  pixelGrid.setPixel(x, y, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
-                } else {
-                  const darkness = 50 - lightness;
-                  const alpha = Math.pow(darkness / 50, 0.5);
-                  pixelGrid.setPixel(x, y, `rgba(0, 0, 0, ${alpha})`);
-                }
-              }
+              worker.postMessage({ frameData: currentFrameData, color: rgb, cols, rows });
             }
           }
         };
@@ -551,15 +552,23 @@
         };
       }
 
-      function tryStart(){
-        if(window.pixelGrid && window.pixelGrid.GRID){ 
-          runNext(); 
-        } else { 
-          setTimeout(tryStart, 200); 
+      // Start simulations immediately - canvas is ready
+      if (canvas && ctx && worker) {
+        runNext();
+      } else if (window.pixelGrid && window.pixelGrid.GRID) {
+        // Fallback to old pixelGrid system if canvas not available
+        runNext();
+      } else {
+        // Wait for pixelGrid as last resort
+        function tryStart(){
+          if(window.pixelGrid && window.pixelGrid.GRID){ 
+            runNext(); 
+          } else { 
+            setTimeout(tryStart, 200); 
+          }
         }
+        tryStart();
       }
-      
-      tryStart();
     })();
   </script>
   <script>
