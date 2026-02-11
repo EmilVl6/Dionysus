@@ -14,10 +14,10 @@ onmessage = function(e) {
         let r = 0, g = 0, b = 0, a = 0;
         if (lightness > 50) {
           r = color.r; g = color.g; b = color.b;
-          a = Math.pow((lightness - 50) / 50, 2.5) * 255;
+          a = Math.pow((lightness - 50) / 50, 1.8) * 255;
         } else {
           r = 0; g = 0; b = 0;
-          a = Math.pow((50 - lightness) / 50, 0.8) * 255;
+          a = Math.pow((50 - lightness) / 50, 0.6) * 255;
         }
         pixels[idx] = r;
         pixels[idx+1] = g;
