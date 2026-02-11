@@ -7,9 +7,7 @@
   <meta name="description" content="Developer ≷ Drummer | If you don’t know who I am, then maybe your best course would be to Tread Lightly" />
   <title>Emil Vinod</title>
   <link rel="icon" href="favicon.ico">
-  <!-- Only load main style.css up front -->
   <link rel="stylesheet" href="style.css">
-  <!-- Defer fonts and extra styles -->
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;600&display=swap" as="style" onload="this.rel='stylesheet'">
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" as="style" onload="this.rel='stylesheet'">
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" as="style" onload="this.rel='stylesheet'">
@@ -20,7 +18,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
   </noscript>
-  <!-- Load phraseology before inline scripts that depend on it -->
   <script src="phraseology.js"></script>
 </head>
 
@@ -135,7 +132,6 @@
             shuffleQueue();
             queueIndex = 0;
           }
-          // Fallback: if still empty, return a default phrase to avoid errors
           if(phraseQueue.length === 0) return "Welcome";
           return phraseQueue[queueIndex++];
         }
@@ -150,7 +146,7 @@
         function typeWord(word){
           clearTimers();
           const banner = document.querySelector('.banner');
-          if (!word || typeof word !== 'string' || !word.length) return; // Prevent error on empty word
+          if (!word || typeof word !== 'string' || !word.length) return;
           banner.dataset.lockAngle = '0';
           banner.style.animation = 'none';
           banner.style.transform = 'rotateY(0deg)';
@@ -388,12 +384,10 @@
         GRID
       };
 
-      // Only build pixel grid if canvas is not available (fallback for live sims)
       const canvasEl = document.getElementById('sim-canvas');
       if (!canvasEl) {
         buildFixedGrid();
       } else {
-        // Set up minimal GRID for compatibility
         GRID.container = container;
         GRID.cols = FIXED_COLS;
         GRID.rows = FIXED_ROWS;
@@ -435,7 +429,6 @@
       const runFor = 6000;
       let useBaked = true;
 
-      // Canvas and worker setup for baked simulations
       const canvas = document.getElementById('sim-canvas');
       const ctx = canvas ? canvas.getContext('2d') : null;
       const cols = 80;
@@ -455,7 +448,6 @@
             ctx.putImageData(imageData, 0, 0);
           };
           
-          // Scale canvas to fit viewport
           function scaleCanvas() {
             const vw = window.innerWidth;
             const vh = window.innerHeight;
@@ -565,7 +557,6 @@
         function render() {
           if (!running) return;
           
-          // Remove previous frame data to free memory
           if (frame > 1 && data.frames[frame - 2]) {
             delete data.frames[frame - 2];
           }
@@ -585,7 +576,6 @@
         };
       }
 
-      // Start simulations after image and main content loads
       function startWhenReady() {
         if (canvas && ctx && worker) {
           runNext();
@@ -603,7 +593,6 @@
         }
       }
       
-      // Wait for image to load
       const portraitImg = document.querySelector('.portrait img');
       if (portraitImg && !portraitImg.complete) {
         portraitImg.addEventListener('load', () => setTimeout(startWhenReady, 300));

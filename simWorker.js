@@ -13,13 +13,13 @@ onmessage = function(e) {
       if (typeof lightness === 'number') {
         let r = 0, g = 0, b = 0, a = 0;
         if (lightness > 50) {
-          // Highlight: background color
+          // Highlight: background color - higher threshold for full brightness
           r = color.r; g = color.g; b = color.b;
-          a = Math.pow((lightness - 50) / 50, 0.6) * 255;
+          a = Math.pow((lightness - 50) / 50, 1.2) * 255;
         } else {
-          // Black
+          // Black - lower threshold for darkest dark
           r = 0; g = 0; b = 0;
-          a = Math.pow((50 - lightness) / 50, 0.5) * 255;
+          a = Math.pow((50 - lightness) / 50, 0.3) * 255;
         }
         pixels[idx] = r;
         pixels[idx+1] = g;
