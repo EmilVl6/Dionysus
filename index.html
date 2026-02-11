@@ -437,7 +437,7 @@
       
       if (canvas && ctx) {
         try {
-          worker = new Worker('simWorker.js');
+          worker = new Worker('simWorker.js?v=' + Date.now());
           worker.onerror = function(err) {
             console.error('Worker error:', err);
             worker = null;
