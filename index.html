@@ -58,9 +58,7 @@
         <div class="panel" data-index="24" data-text=""></div>
       </div>
       <div class="screen">
-        <div class="pixel-grid" style="position:relative;width:100%;height:100%;">
-          <canvas id="sim-canvas" width="25" height="25" style="display:block;position:absolute;top:0;left:0;width:100%;height:100%;image-rendering:pixelated;"></canvas>
-        </div>
+        <canvas id="sim-canvas" width="25" height="25" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;z-index:-1;image-rendering:pixelated;"></canvas>
       </div>
     </div>
       <div class="portrait" aria-hidden="true"><img src="Me-optimized-small.png" alt="" loading="lazy" /></div>
@@ -300,7 +298,6 @@
     (function(){
       const GRID = {};
       const container = document.querySelector('.pixel-grid');
-      if(!container) return;
 
       const FIXED_COLS = 80;
       const FIXED_ROWS = 80;
@@ -331,7 +328,7 @@
 
       let scaleRAF = null;
       function scaleGrid(){
-        if(scaleRAF) return;
+        if(!container || scaleRAF) return;
         scaleRAF = requestAnimationFrame(() => {
           const vw = window.innerWidth;
           const vh = window.innerHeight;
@@ -574,22 +571,30 @@
         };
       }
 
-      // Start simulations immediately - canvas is ready
-      if (canvas && ctx && worker) {
-        runNext();
-      } else if (window.pixelGrid && window.pixelGrid.GRID) {
-        // Fallback to old pixelGrid system if canvas not available
-        runNext();
-      } else {
-        // Wait for pixelGrid as last resort
-        function tryStart(){
-          if(window.pixelGrid && window.pixelGrid.GRID){ 
-            runNext(); 
-          } else { 
-            setTimeout(tryStart, 200); 
+      // Start simulations after image and main content loads
+      function startWhenReady() {
+        if (canvas && ctx && worker) {
+          runNext();
+        } else if (window.pixelGrid && window.pixelGrid.GRID) {
+          runNext();
+        } else {
+          function tryStart(){
+            if(window.pixelGrid && window.pixelGrid.GRID){ 
+              runNext(); 
+            } else { 
+              setTimeout(tryStart, 200); 
+            }
           }
+          tryStart();
         }
-        tryStart();
+      }
+      
+      // Wait for image to load
+      const portraitImg = document.querySelector('.portrait img');
+      if (portraitImg && !portraitImg.complete) {
+        portraitImg.addEventListener('load', () => setTimeout(startWhenReady, 300));
+      } else {
+        setTimeout(startWhenReady, 500);
       }
     })();
   </script>
