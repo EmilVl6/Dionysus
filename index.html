@@ -57,7 +57,11 @@
         <div class="panel" data-index="23" data-text=""></div>
         <div class="panel" data-index="24" data-text=""></div>
       </div>
-      <div class="screen"></div>
+      <div class="screen">
+        <div class="pixel-grid" style="position:relative;width:100%;height:100%;">
+          <canvas id="sim-canvas" width="25" height="25" style="display:block;position:absolute;top:0;left:0;width:100%;height:100%;image-rendering:pixelated;"></canvas>
+        </div>
+      </div>
     </div>
       <div class="portrait" aria-hidden="true"><img src="Me-optimized-small.png" alt="" loading="lazy" /></div>
       <div class="center-inner">
@@ -68,7 +72,6 @@
       <p class="subtitle">Developer ≷ Drummer</p>
     </main>
   </div>
-  <canvas id="sim-canvas" width="25" height="25" style="display:block;position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;image-rendering:pixelated;"></canvas>
   <script>
     (function(){
       const colors = [
