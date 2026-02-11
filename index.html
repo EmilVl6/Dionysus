@@ -57,10 +57,9 @@
         <div class="panel" data-index="23" data-text=""></div>
         <div class="panel" data-index="24" data-text=""></div>
       </div>
-      <div class="screen">
-        <canvas id="sim-canvas" width="25" height="25" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;z-index:-1;image-rendering:pixelated;"></canvas>
-      </div>
+      <div class="screen"></div>
     </div>
+      <canvas id="sim-canvas" width="25" height="25" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:-1;pointer-events:none;image-rendering:pixelated;"></canvas>
       <div class="portrait" aria-hidden="true"><img src="Me-optimized-small.png" alt="" loading="lazy" /></div>
       <div class="center-inner">
       <div class="pencil-intro">Hi I'm</div>
@@ -455,6 +454,21 @@
             imageData.data.set(e.data.pixels || e.data);
             ctx.putImageData(imageData, 0, 0);
           };
+          
+          // Scale canvas to fit viewport
+          function scaleCanvas() {
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const gridSize = 400;
+            const scaleX = vw / gridSize;
+            const scaleY = vh / gridSize;
+            const scale = Math.max(scaleX, scaleY) * 1.1;
+            canvas.style.width = gridSize + 'px';
+            canvas.style.height = gridSize + 'px';
+            canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
+          }
+          scaleCanvas();
+          window.addEventListener('resize', scaleCanvas);
         } catch(e) {
           console.error('Failed to create worker:', e);
           worker = null;
